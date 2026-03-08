@@ -418,6 +418,10 @@
   .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 500; box-shadow: 0 2px 8px rgba(61,114,196,0.2); }
   .row-delete-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; transition: all 0.15s; }
   .row-delete-btn:hover { background: var(--red-dim); color: var(--red); border-color: rgba(208,85,85,0.3); }
+  .row-edit-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .row-edit-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: rgba(61,114,196,0.3); }
+  .row-edit-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .row-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
   .empty-state { padding: 38px; text-align: center; color: var(--text3); font-size: 13px; }
   .empty-icon { font-size: 30px; margin-bottom: 10px; opacity: 0.35; }
   ::-webkit-scrollbar { width: 5px; }
@@ -875,7 +879,8 @@
 <!-- Modal: Бронирование -->
 <div class="modal-overlay" id="modal-booking">
   <div class="modal">
-    <div class="modal-title">Новое бронирование</div>
+    <div class="modal-title" id="booking-modal-title">Новое бронирование</div>
+    <input type="hidden" id="b-edit-id">
     <div class="form-group">
       <label class="form-label">Имя гостя</label>
       <input class="form-input" id="b-name" placeholder="например, Анна Смирнова">
@@ -927,7 +932,8 @@
 <!-- Modal: Заметка -->
 <div class="modal-overlay" id="modal-note">
   <div class="modal">
-    <div class="modal-title">Новая заметка</div>
+    <div class="modal-title" id="note-modal-title">Новая заметка</div>
+    <input type="hidden" id="n-edit-id">
     <div class="form-group">
       <label class="form-label">Категория</label>
       <select class="form-select" id="n-tag">
@@ -952,7 +958,8 @@
 <!-- Modal: Транзакция -->
 <div class="modal-overlay" id="modal-transaction">
   <div class="modal">
-    <div class="modal-title">Добавить транзакцию</div>
+    <div class="modal-title" id="transaction-modal-title">Добавить транзакцию</div>
+    <input type="hidden" id="t-edit-id">
     <div class="form-group">
       <label class="form-label">Тип</label>
       <select class="form-select" id="t-type">
@@ -1171,12 +1178,38 @@ function renderOverview() {
 // ── Render: Bookings ──
 let bookingTab='upcoming';
 window.switchTab=function(t){bookingTab=t;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');renderBookings();};
+const EDIT_SVG = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 function renderBookings(){
   const today=fmt(new Date());
-  const list=bookingTab==='upcoming'?S.bookings.filter(b=>b.checkout>=today).sort((a,b)=>a.checkin.localeCompare(b.checkin)):S.bookings.filter(b=>b.checkout<today).sort((a,b)=>b.checkin.localeCompare(a.checkin));
+  const isPast = bookingTab==='past';
+  const list = isPast
+    ? S.bookings.filter(b=>b.checkout<today).sort((a,b)=>b.checkin.localeCompare(a.checkin))
+    : S.bookings.filter(b=>b.checkout>=today).sort((a,b)=>a.checkin.localeCompare(b.checkin));
   const ul=document.getElementById('full-booking-list');
   if(!ul)return;
-  ul.innerHTML=list.length?list.map(b=>{const n=nights(b.checkin,b.checkout);const cb=bookingTab==='upcoming'&&b.status!=='cancelled'?`<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="cancelBooking('${b.id}')">Отменить</button>`:'';return`<li class="booking-item"><div class="avatar">${b.name[0]}</div><div><div class="guest-name">${b.name}</div><div class="booking-dates">${b.checkin} → ${b.checkout} · ${b.platform}</div><div style="margin-top:4px">${badge(b.status)}</div></div><div class="booking-right"><div class="booking-amount">${RUB(n*b.rate)}</div><div class="booking-nights">${n} ноч · ${RUB(b.rate)}/н</div>${cb}</div><button class="row-delete-btn" onclick="deleteBooking('${b.id}')">✕</button></li>`;}).join(''):'<li class="empty-state"><div class="empty-icon">📅</div>Нет бронирований</li>';
+  ul.innerHTML=list.length?list.map(b=>{
+    const n=nights(b.checkin,b.checkout);
+    const cancelBtn = !isPast && b.status!=='cancelled'
+      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="cancelBooking('${b.id}')">Отменить</button>` : '';
+    const txBtn = isPast && b.status!=='cancelled'
+      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">₽ Доход</button>` : '';
+    return`<li class="booking-item">
+      <div class="avatar">${b.name[0]}</div>
+      <div>
+        <div class="guest-name">${b.name}</div>
+        <div class="booking-dates">${b.checkin} → ${b.checkout} · ${b.platform}</div>
+        <div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;align-items:center">${badge(b.status)}${cancelBtn}${txBtn}</div>
+      </div>
+      <div class="booking-right">
+        <div class="booking-amount">${RUB(n*b.rate)}</div>
+        <div class="booking-nights">${n} ноч · ${RUB(b.rate)}/н</div>
+      </div>
+      <div class="row-actions">
+        <button class="row-edit-btn" onclick="editBooking('${b.id}')" title="Редактировать">${EDIT_SVG}</button>
+        <button class="row-delete-btn" onclick="deleteBooking('${b.id}')" title="Удалить">✕</button>
+      </div>
+    </li>`;
+  }).join(''):'<li class="empty-state"><div class="empty-icon">📅</div>Нет бронирований</li>';
 }
 
 // ── Render: Calendar ──
@@ -1318,7 +1351,10 @@ function renderBudget(){
             <div style="font-size:10.5px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${t.cat} · ${t.date}</div>
           </div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:${t.type==='income'?'var(--green)':'var(--red)'};white-space:nowrap;margin-right:6px">${t.type==='income'?'+':'-'}${RUB(t.amount)}</div>
-          <button class="row-delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
+          <div class="row-actions">
+            <button class="row-edit-btn" onclick="editTransaction('${t.id}')" title="Редактировать">${EDIT_SVG}</button>
+            <button class="row-delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
+          </div>
         </div>`).join('') + `</div>`
       : '<div class="empty-state"><div class="empty-icon">💰</div>Нет транзакций за этот период</div>';
   }
@@ -1328,13 +1364,27 @@ function renderBudget(){
 function renderNotes(){
   const grid=document.getElementById('notes-grid'); if(!grid)return;
   const tagC={maintenance:['#fff8e8','#9a6d10','🔧'],idea:['#f0f7ff','#3d72c4','💡'],urgent:['#fef0f0','#d05555','🚨'],guest:['#f3f0ff','#7c55d4','👤'],general:['var(--surface2)','var(--text2)','📝']};
-  grid.innerHTML=S.notes.length?S.notes.map(n=>{const[bg,color,icon]=tagC[n.tag]||tagC.general;return`<div class="note-card" style="background:${bg}"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><span style="font-size:18px">${icon}</span><button class="row-delete-btn" onclick="deleteNote('${n.id}')">✕</button></div><div style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:10px">${n.text}</div><div style="font-size:10px;color:${color};font-family:'DM Mono',monospace">${n.date}</div></div>`;}).join(''):'<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📝</div>Нет заметок</div>';
+  grid.innerHTML=S.notes.length?S.notes.map(n=>{
+    const[bg,color,icon]=tagC[n.tag]||tagC.general;
+    return`<div class="note-card" style="background:${bg}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <span style="font-size:18px">${icon}</span>
+        <div class="row-actions">
+          <button class="row-edit-btn" onclick="editNote('${n.id}')" title="Редактировать">${EDIT_SVG}</button>
+          <button class="row-delete-btn" onclick="deleteNote('${n.id}')">✕</button>
+        </div>
+      </div>
+      <div style="font-size:14px;color:var(--text);line-height:1.5;margin-bottom:10px">${n.text}</div>
+      <div style="font-size:10px;color:${color};font-family:'DM Mono',monospace">${n.date}</div>
+    </div>`;
+  }).join(''):'<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📝</div>Нет заметок</div>';
 }
 
 // ── Modals ──
-function openModal(type){
+function openModal(type, prefill){
   if(type==='booking'){
-    // Clear all fields every time
+    document.getElementById('b-edit-id').value='';
+    document.getElementById('booking-modal-title').textContent='Новое бронирование';
     document.getElementById('b-name').value='';
     document.getElementById('b-notes').value='';
     document.getElementById('b-rate').value='3000';
@@ -1345,12 +1395,23 @@ function openModal(type){
     refreshPlatformSelect();
   }
   if(type==='transaction'){
-    document.getElementById('t-amount').value='';
-    document.getElementById('t-desc').value='';
-    document.getElementById('t-date').value=fmt(new Date());
+    document.getElementById('t-edit-id').value='';
+    document.getElementById('transaction-modal-title').textContent='Добавить транзакцию';
+    document.getElementById('t-amount').value = prefill?.amount ?? '';
+    document.getElementById('t-desc').value   = prefill?.desc   ?? '';
+    document.getElementById('t-date').value   = prefill?.date   ?? fmt(new Date());
     refreshCatSelect();
+    if(prefill?.type) document.getElementById('t-type').value = prefill.type;
+    if(prefill?.cat){
+      // ensure category exists then select it
+      if(!S.txCategories.includes(prefill.cat)) S.txCategories.push(prefill.cat);
+      refreshCatSelect();
+      document.getElementById('t-cat').value = prefill.cat;
+    }
   }
   if(type==='note'){
+    document.getElementById('n-edit-id').value='';
+    document.getElementById('note-modal-title').textContent='Новая заметка';
     document.getElementById('n-text').value='';
   }
   document.getElementById('modal-'+type).classList.add('open');
@@ -1363,6 +1424,51 @@ function refreshPlatformSelect(){const sel=document.getElementById('b-platform')
 function refreshCatSelect(){const sel=document.getElementById('t-cat');if(!sel)return;sel.innerHTML=S.txCategories.map(c=>`<option value="${c}">${c}</option>`).join('');renderCatTags();}
 function renderCatTags(){const div=document.getElementById('cat-tags');if(!div)return;div.innerHTML=S.txCategories.map(c=>`<span class="cat-tag">${c}<button class="cat-tag-del" onclick="deleteTxCategory('${c.replace(/'/g,"\\'")}')">✕</button></span>`).join('');}
 
+// ── Edit openers ──
+window.editBooking=function(id){
+  const b=S.bookings.find(x=>x.id===id); if(!b)return;
+  document.getElementById('b-edit-id').value=id;
+  document.getElementById('booking-modal-title').textContent='Редактировать бронирование';
+  document.getElementById('b-name').value=b.name;
+  document.getElementById('b-checkin').value=b.checkin;
+  document.getElementById('b-checkout').value=b.checkout;
+  document.getElementById('b-rate').value=b.rate;
+  document.getElementById('b-status').value=b.status;
+  document.getElementById('b-notes').value=b.notes||'';
+  refreshPlatformSelect();
+  document.getElementById('b-platform').value=b.platform;
+  document.getElementById('modal-booking').classList.add('open');
+};
+window.editNote=function(id){
+  const n=S.notes.find(x=>x.id===id); if(!n)return;
+  document.getElementById('n-edit-id').value=id;
+  document.getElementById('note-modal-title').textContent='Редактировать заметку';
+  document.getElementById('n-tag').value=n.tag;
+  document.getElementById('n-text').value=n.text;
+  document.getElementById('modal-note').classList.add('open');
+};
+window.editTransaction=function(id){
+  const t=S.transactions.find(x=>x.id===id); if(!t)return;
+  document.getElementById('t-edit-id').value=id;
+  document.getElementById('transaction-modal-title').textContent='Редактировать транзакцию';
+  document.getElementById('t-type').value=t.type;
+  document.getElementById('t-amount').value=t.amount;
+  document.getElementById('t-date').value=t.date;
+  document.getElementById('t-desc').value=t.desc;
+  refreshCatSelect();
+  document.getElementById('t-cat').value=t.cat;
+  document.getElementById('modal-transaction').classList.add('open');
+};
+
+// ── Create transaction from past booking ──
+window.createTxFromBooking=function(id){
+  const b=S.bookings.find(x=>x.id===id); if(!b)return;
+  const n=nights(b.checkin,b.checkout);
+  const total=n*Number(b.rate);
+  const desc=`${b.name} · ${b.checkin} – ${b.checkout} · ${b.platform}`;
+  openModal('transaction',{type:'income',amount:total,desc,cat:'Доход от аренды',date:b.checkout});
+};
+
 // ── CRUD ──
 window.saveBooking=function(){
   const name=document.getElementById('b-name').value.trim();
@@ -1370,54 +1476,50 @@ window.saveBooking=function(){
   const checkin  = document.getElementById('b-checkin').value;
   const checkout = document.getElementById('b-checkout').value;
   if(!checkin||!checkout||checkin>=checkout) return toast('Проверьте даты заезда и выезда');
+  const editId = document.getElementById('b-edit-id').value;
 
-  // Overlap check — block if any active booking overlaps these dates
+  // Overlap check — skip self when editing
   const conflict = S.bookings.find(b =>
-    b.status !== 'cancelled' &&
-    checkin  < b.checkout &&
-    checkout > b.checkin
+    b.id !== editId && b.status !== 'cancelled' &&
+    checkin < b.checkout && checkout > b.checkin
   );
   if(conflict) return toast(`❌ Эти даты уже заняты: ${conflict.name} (${conflict.checkin} – ${conflict.checkout})`);
 
-  const id=uid();
+  const id = editId || uid();
   const b={id,name,checkin,checkout,
     rate:    Number(document.getElementById('b-rate').value)||3000,
     status:  document.getElementById('b-status').value,
     platform:document.getElementById('b-platform').value||'—',
     notes:   document.getElementById('b-notes').value
   };
-  // Write to Firebase only — onValue will update S and re-render
   dbSet('bookings/'+id, b);
   closeModal('booking');
-  toast('✦ Бронирование сохранено');
+  toast(editId ? '✦ Бронирование обновлено' : '✦ Бронирование сохранено');
 };
 window.deleteBooking=function(id){dbDelete('bookings/'+id);S.bookings=S.bookings.filter(b=>b.id!==id);lsSave();renderBookings();renderOverview();updateSidebar();toast('Бронирование удалено');};
 window.cancelBooking=function(id){const b=S.bookings.find(b=>b.id===id);if(!b)return;b.status='cancelled';dbSet('bookings/'+id,b);lsSave();renderBookings();renderOverview();updateSidebar();toast('Бронирование отменено');};
+
 window.saveNote=function(){
   const text=document.getElementById('n-text').value.trim();
   if(!text) return toast('Напишите текст');
-  const id=uid(), n={id, tag:document.getElementById('n-tag').value, text, date:fmt(new Date())};
-  S.notes.push(n);
-  dbSet('notes/'+id, n);
-  lsSave(); closeModal('note'); renderNotes(); renderOverview();
-  toast('✦ Заметка сохранена');
+  const editId=document.getElementById('n-edit-id').value;
+  const id=editId||uid();
+  const n={id,tag:document.getElementById('n-tag').value,text,date:editId?(S.notes.find(x=>x.id===editId)?.date||fmt(new Date())):fmt(new Date())};
+  if(editId){ const i=S.notes.findIndex(x=>x.id===editId); if(i>=0)S.notes[i]=n; } else { S.notes.push(n); }
+  dbSet('notes/'+id,n); lsSave(); closeModal('note'); renderNotes(); renderOverview();
+  toast(editId?'✦ Заметка обновлена':'✦ Заметка сохранена');
 };
 window.deleteNote=function(id){dbDelete('notes/'+id);S.notes=S.notes.filter(n=>n.id!==id);lsSave();renderNotes();renderOverview();toast('Заметка удалена');};
+
 window.saveTransaction=function(){
   const amount=document.getElementById('t-amount').value;
   if(!amount) return toast('Введите сумму');
-  const id=uid(), t={
-    id,
-    type: document.getElementById('t-type').value,
-    amount: Number(amount),
-    date: document.getElementById('t-date').value,
-    desc: document.getElementById('t-desc').value||'Транзакция',
-    cat: document.getElementById('t-cat').value
-  };
-  S.transactions.push(t);
-  dbSet('transactions/'+id, t);
-  lsSave(); closeModal('transaction'); renderBudget(); renderOverview();
-  toast('✦ Транзакция сохранена');
+  const editId=document.getElementById('t-edit-id').value;
+  const id=editId||uid();
+  const t={id,type:document.getElementById('t-type').value,amount:Number(amount),date:document.getElementById('t-date').value,desc:document.getElementById('t-desc').value||'Транзакция',cat:document.getElementById('t-cat').value};
+  if(editId){ const i=S.transactions.findIndex(x=>x.id===editId); if(i>=0)S.transactions[i]=t; } else { S.transactions.push(t); }
+  dbSet('transactions/'+id,t); lsSave(); closeModal('transaction'); renderBudget(); renderOverview();
+  toast(editId?'✦ Транзакция обновлена':'✦ Транзакция сохранена');
 };
 window.deleteTransaction=function(id){dbDelete('transactions/'+id);S.transactions=S.transactions.filter(t=>t.id!==id);lsSave();renderBudget();renderOverview();toast('Транзакция удалена');};
 window.addPlatform=function(){const inp=document.getElementById('new-platform-input'),name=inp.value.trim();if(!name)return toast('Введите название');if(S.platforms.includes(name))return toast('Уже есть');S.platforms.push(name);dbSet('platforms',S.platforms);lsSave();refreshPlatformSelect();document.getElementById('b-platform').value=name;inp.value='';toast('✦ Платформа добавлена');};
