@@ -62,7 +62,7 @@
     pointer-events: none; z-index: 0;
   }
 
-  .shell { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+  .shell { display: flex; min-height: 100vh; position: relative; z-index: 1; align-items: stretch; }
 
   /* ── Sidebar ── */
   .sidebar {
@@ -70,13 +70,14 @@
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
-    position: sticky; top: 0; height: 100vh;
+    position: sticky; top: 0; height: 100vh; min-height: 100vh;
     box-shadow: 2px 0 16px rgba(61,114,196,0.05);
   }
   .sidebar-inner {
     display: flex; flex-direction: column;
     flex: 1; overflow: hidden;
     padding: 32px 0;
+    height: 100%;
   }
   .sidebar-logo { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
   .logo-label { font-family: 'Cormorant Garamond', serif; font-size: 23px; font-weight: 400; letter-spacing: 0.04em; color: var(--accent); line-height: 1; }
@@ -240,7 +241,7 @@
   /* ── Calendar ── */
   .calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; padding: 18px 22px; }
   .cal-day-label { text-align: center; font-family: 'DM Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); padding: 5px 0; }
-  .cal-day { min-height: 64px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.15s; position: relative; color: var(--text2); padding: 6px 7px 5px; }
+  .cal-day { min-height: 80px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.15s; position: relative; color: var(--text2); padding: 7px 8px 6px; }
   .cal-day:hover { background: var(--surface2); }
   .cal-day.today { background: var(--accent); color: #fff; font-weight: 600; box-shadow: 0 2px 8px rgba(61,114,196,0.3); }
   .cal-day.today .cal-guest { color: rgba(255,255,255,0.82); }
@@ -254,7 +255,7 @@
   .cal-platform { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--text3); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; margin-top: 1px; }
   .cal-rate { font-family: 'DM Mono', monospace; font-size: 8.5px; color: var(--accent); font-weight: 500; margin-top: 2px; }
   @media (max-width: 600px) {
-    .cal-day { min-height: 52px; padding: 4px 4px 3px; border-radius: 5px; }
+    .cal-day { min-height: 62px; padding: 4px 4px 3px; border-radius: 5px; }
     .cal-day-num { font-size: 11px; }
     .cal-guest { font-size: 7.5px; }
     .cal-platform { font-size: 7px; }
@@ -784,20 +785,24 @@
       <div class="page-header">
         <div>
           <div class="page-title">Календарь</div>
-          <div class="page-date">Март 2026</div>
+          <div class="page-date" id="cal-page-date"></div>
         </div>
         <button class="btn btn-primary" onclick="openModal('booking')">+ Новое бронирование</button>
       </div>
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Март 2026</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="nav-arrow" onclick="calPrev()" style="width:30px;height:30px;font-size:17px;">&#8249;</button>
+            <span class="card-title" id="cal-title" style="min-width:160px;text-align:center;text-transform:none;font-size:14px;letter-spacing:0;font-family:'Cormorant Garamond',serif;font-weight:400;font-size:17px;color:var(--text);">Март 2026</span>
+            <button class="nav-arrow" onclick="calNext()" style="width:30px;height:30px;font-size:17px;">&#8250;</button>
+          </div>
           <div style="display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--text3);">
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--green-dim);border:1px solid rgba(46,158,107,0.3);display:inline-block;"></span> Занято</span>
             <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--accent);display:inline-block;"></span> Сегодня</span>
           </div>
         </div>
         <div class="calendar-grid" id="cal-grid"></div>
-        <div style="padding:14px 22px;border-top:1px solid var(--border);background:var(--surface2);">
+        <div style="padding:14px 22px;border-top:1px solid var(--border);background:var(--surface2);min-height:52px;display:flex;align-items:center;">
           <div id="cal-booking-detail" style="font-size:12.5px;color:var(--text3);">Нажмите на занятый день, чтобы увидеть детали.</div>
         </div>
       </div>
@@ -1448,17 +1453,24 @@ function renderBookings(){
 }
 
 // ── Render: Calendar ──
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+window.calPrev = function(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); };
+window.calNext = function(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); };
+
 function renderCalendar(){
   const grid=document.getElementById('cal-grid'); if(!grid)return;
-  const now=new Date(),year=now.getFullYear(),month=now.getMonth();
-  const firstDay=new Date(year,month,1).getDay(), dim=new Date(year,month+1,0).getDate(), today=now.getDate();
+  const now=new Date(), todayY=now.getFullYear(), todayM=now.getMonth(), todayD=now.getDate();
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
 
   // Map each day-of-month → booking
   const bDays={};
   S.bookings.filter(b=>b.status!=='cancelled').forEach(b=>{
     let d=new Date(b.checkin); const end=new Date(b.checkout);
     while(d<end){
-      if(d.getMonth()===month&&d.getFullYear()===year) bDays[d.getDate()]=b;
+      if(d.getMonth()===calMonth&&d.getFullYear()===calYear) bDays[d.getDate()]=b;
       d=new Date(d.getTime()+86400000);
     }
   });
@@ -1469,24 +1481,57 @@ function renderCalendar(){
 
   for(let d=1;d<=dim;d++){
     const bk=bDays[d];
-    const isToday=d===today;
+    const isToday=d===todayD&&calMonth===todayM&&calYear===todayY;
     let inner = `<div class="cal-day-num">${d}</div>`;
     if(bk){
-      const n=Math.max(1,Math.round((new Date(bk.checkout)-new Date(bk.checkin))/86400000));
       const perNight=Math.round(Number(bk.rate));
-      // First name only to save space
       const firstName=bk.name.split(/\s+/)[0];
       inner+=`<div class="cal-guest">${firstName}</div>
               <div class="cal-platform">${bk.platform||'—'}</div>
               <div class="cal-rate">₽${perNight.toLocaleString('ru-RU')}/н</div>`;
     }
-    html+=`<div class="cal-day${bk?' booked':''}${isToday?' today':''}" title="${bk?`${bk.name} · ${bk.checkin}–${bk.checkout} · ${bk.platform}`:''}">${inner}</div>`;
+    const clickAttr = bk ? `onclick="showCalDetail('${bk.id}')"` : '';
+    html+=`<div class="cal-day${bk?' booked':''}${isToday?' today':''}" ${clickAttr} title="${bk?`${bk.name} · ${bk.checkin}–${bk.checkout}`:''}">${inner}</div>`;
   }
 
   grid.innerHTML=html;
-  const t=document.getElementById('cal-title');
-  if(t)t.textContent=now.toLocaleString('ru-RU',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
+
+  const monthName=new Date(calYear,calMonth,1).toLocaleString('ru-RU',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
+  const titleEl=document.getElementById('cal-title');
+  if(titleEl) titleEl.textContent=monthName;
+  const pageDate=document.getElementById('cal-page-date');
+  if(pageDate) pageDate.textContent=monthName;
+
+  // Reset detail panel
+  const det=document.getElementById('cal-booking-detail');
+  if(det){ det.textContent='Нажмите на занятый день, чтобы увидеть детали.'; det.style.color='var(--text3)'; }
 }
+
+window.showCalDetail = function(id){
+  const b=S.bookings.find(x=>x.id===id); if(!b)return;
+  const n=Math.max(1,Math.round((new Date(b.checkout)-new Date(b.checkin))/86400000));
+  const total=n*Number(b.rate);
+  const det=document.getElementById('cal-booking-detail'); if(!det)return;
+  const statusColors={confirmed:['var(--green-dim)','var(--green)'],pending:['rgba(180,140,60,0.10)','#9a6d10'],checkout:['var(--blue-dim)','var(--blue)'],cancelled:['var(--red-dim)','var(--red)']};
+  const statusNames={confirmed:'Подтверждено',pending:'Ожидание',checkout:'Выезд',cancelled:'Отменено'};
+  const [sBg,sColor]=statusColors[b.status]||statusColors.confirmed;
+  det.style.color='var(--text)';
+  det.innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;">${b.name[0]}</div>
+        <div>
+          <div style="font-size:13.5px;font-weight:500;color:var(--text);line-height:1.2;">${b.name}</div>
+          <div style="font-size:10.5px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">${b.platform}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);">📅 <span>${b.checkin} → ${b.checkout}</span></div>
+      <div style="display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);">🌙 <span>${n} ноч. · ₽${Number(b.rate).toLocaleString('ru-RU')}/н</span></div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--accent);font-weight:400;">₽${total.toLocaleString('ru-RU')}</div>
+      <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${sBg};color:${sColor};font-weight:500;">${statusNames[b.status]||b.status}</div>
+      ${b.notes?`<div style="font-size:11.5px;color:var(--text3);font-style:italic;width:100%;margin-top:2px;">"${b.notes}"</div>`:''}
+    </div>`;
+};
 
 // ── Budget state ──
 let budgetView = 'month'; // 'month' | 'year'
