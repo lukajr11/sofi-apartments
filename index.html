@@ -219,7 +219,7 @@
   /* ── Booking list ── */
   .bookings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
   .booking-list { list-style: none; }
-  .booking-item { display: grid; grid-template-columns: 42px 1fr auto 68px; gap: 12px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .booking-item { display: grid; grid-template-columns: 42px 1fr auto 34px; gap: 12px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .booking-item:last-child { border-bottom: none; }
   .booking-item:hover { background: var(--surface2); }
   .guest-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
@@ -424,6 +424,11 @@
   .row-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
   .empty-state { padding: 38px; text-align: center; color: var(--text3); font-size: 13px; }
   .empty-icon { font-size: 30px; margin-bottom: 10px; opacity: 0.35; }
+  .sstat-period-toggle { display:flex; gap:2px; }
+  .speriod-btn { padding:2px 6px; border-radius:5px; border:1px solid var(--border2); background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:8.5px; cursor:pointer; transition:all 0.15s; line-height:1.4; }
+  .speriod-btn:hover { background:var(--surface2); color:var(--text2); }
+  .speriod-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
@@ -515,7 +520,7 @@
     .alerts-area { gap:6px; margin-bottom:14px; }
     .alert-banner { padding:10px 13px; font-size:12px; gap:10px; }
     .dash-bottom { grid-template-columns:1fr; gap:12px; }
-    .booking-item { grid-template-columns:36px 1fr auto 68px; gap:8px; padding:11px 13px; }
+    .booking-item { grid-template-columns:36px 1fr auto 28px; gap:8px; padding:11px 13px; }
     .guest-name { font-size:12.5px !important; }
     .booking-dates { font-size:10px !important; }
     .booking-amount { font-size:15px !important; }
@@ -616,10 +621,20 @@
     <div class="page active" id="page-overview">
       <div class="page-header">
         <div>
-          <div class="page-title">Добрый день ✦</div>
+          <div class="page-title">Добрый день, София ✦</div>
           <div class="page-date" id="today-date"></div>
         </div>
         <button class="btn btn-primary" onclick="openModal('booking')">+ Новое бронирование</button>
+      </div>
+
+      <!-- Motivation quote -->
+      <div id="quote-banner" style="display:flex;align-items:flex-start;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(61,114,196,0.05);cursor:pointer;" onclick="refreshQuote()" title="Нажмите для новой цитаты">
+        <span style="font-size:18px;flex-shrink:0;margin-top:1px;">✨</span>
+        <div style="min-width:0;flex:1;">
+          <div id="quote-text" style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:var(--text);line-height:1.5;font-style:italic;">Загрузка цитаты...</div>
+          <div id="quote-author" style="font-family:'DM Mono',monospace;font-size:9.5px;color:var(--text3);margin-top:6px;text-transform:uppercase;letter-spacing:0.1em;"></div>
+        </div>
+        <span style="font-size:11px;color:var(--text3);flex-shrink:0;margin-top:2px;opacity:0.6;">↻</span>
       </div>
 
       <!-- Cover -->
@@ -639,7 +654,14 @@
       <!-- Stats strip -->
       <div class="stats-strip">
         <div class="sstat">
-          <div class="sstat-label">Доход · Месяц</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+            <div class="sstat-label" id="stat-rev-label">Доход · Месяц</div>
+            <div class="sstat-period-toggle">
+              <button class="speriod-btn active" onclick="setRevPeriod('month',this)">1М</button>
+              <button class="speriod-btn" onclick="setRevPeriod('3month',this)">3М</button>
+              <button class="speriod-btn" onclick="setRevPeriod('6month',this)">6М</button>
+            </div>
+          </div>
           <div class="sstat-value"><em>₽</em><span id="stat-revenue">0</span></div>
           <div class="sstat-sub up" id="stat-rev-change">— нет данных</div>
         </div>
@@ -654,7 +676,14 @@
           <div class="sstat-sub" id="stat-avg-change">— нет данных</div>
         </div>
         <div class="sstat">
-          <div class="sstat-label">Чистая прибыль</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
+            <div class="sstat-label" id="stat-profit-label">Чистая прибыль · Месяц</div>
+            <div class="sstat-period-toggle">
+              <button class="speriod-btn active" onclick="setProfitPeriod('month',this)">1М</button>
+              <button class="speriod-btn" onclick="setProfitPeriod('3month',this)">3М</button>
+              <button class="speriod-btn" onclick="setProfitPeriod('6month',this)">6М</button>
+            </div>
+          </div>
           <div class="sstat-value"><em>₽</em><span id="stat-profit">0</span></div>
           <div class="sstat-sub up" id="stat-profit-change">после расходов</div>
         </div>
@@ -704,6 +733,21 @@
           <div id="overview-notes" style="padding:10px 14px;"></div>
         </div>
       </div>
+
+      <!-- Total PnL Graph -->
+      <div class="card full-col" style="margin-top:18px;">
+        <div class="card-header">
+          <span class="card-title">Совокупный P&amp;L</span>
+          <span id="pnl-summary" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);"></span>
+        </div>
+        <div style="padding:16px 20px 20px;">
+          <canvas id="pnl-canvas" style="width:100%;height:180px;display:block;"></canvas>
+          <div id="pnl-empty" style="display:none;text-align:center;padding:40px 0;color:var(--text3);font-size:13px;">
+            <div style="font-size:28px;margin-bottom:8px;opacity:0.35;">📈</div>Нет транзакций для построения графика
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- БРОНИРОВАНИЯ -->
@@ -1117,12 +1161,32 @@ function renderOverview() {
   const todayEl=document.getElementById('today-date');
   if(todayEl) todayEl.textContent=now.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  const mTx=S.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m;});
-  const income=mTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense=mTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const profit=income-expense;
-  const today=fmt(now);
+  // Helper: get transactions for a period
+  function getTxForPeriod(period) {
+    const cutoff = new Date(now);
+    if(period==='month') cutoff.setDate(1);
+    else if(period==='3month') cutoff.setMonth(cutoff.getMonth()-3);
+    else if(period==='6month') cutoff.setMonth(cutoff.getMonth()-6);
+    return S.transactions.filter(t=>new Date(t.date)>=cutoff);
+  }
 
+  const periodLabel = p => p==='month'?'Месяц':p==='3month'?'3 мес.':'6 мес.';
+
+  // Revenue stat
+  const revTx = getTxForPeriod(revPeriod);
+  const income = revTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const revLabelEl = document.getElementById('stat-rev-label');
+  if(revLabelEl) revLabelEl.textContent = 'Доход · '+periodLabel(revPeriod);
+
+  // Profit stat
+  const profTx = getTxForPeriod(profitPeriod);
+  const profIncome = profTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const profExpense = profTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const profit = profIncome - profExpense;
+  const profLabelEl = document.getElementById('stat-profit-label');
+  if(profLabelEl) profLabelEl.textContent = 'Прибыль · '+periodLabel(profitPeriod);
+
+  const today=fmt(now);
   const active=S.bookings.filter(b=>b.status!=='cancelled'&&b.checkin<=today&&b.checkout>today);
   const mRates=S.bookings.filter(b=>b.status!=='cancelled'&&b.checkin>=fmt(new Date(y,m,1))&&b.checkin<fmt(new Date(y,m+1,1)));
   const avg=mRates.length?Math.round(mRates.reduce((s,b)=>s+Number(b.rate),0)/mRates.length):0;
@@ -1133,7 +1197,7 @@ function renderOverview() {
   sv('stat-avg').textContent=avg.toLocaleString('ru-RU');
   sv('stat-profit').textContent=profit.toLocaleString('ru-RU');
   sv('stat-rev-change').textContent=income>0?'↑ '+RUB(income)+' получено':'— нет доходов';
-  sv('stat-avg-change').textContent=avg>0?'за эту месяц':'— нет броней';
+  sv('stat-avg-change').textContent=avg>0?'за этот месяц':'— нет броней';
   const profEl=document.getElementById('stat-profit-change');
   if(profEl){profEl.textContent=profit>=0?'↑ после расходов':'↓ убыток';profEl.className='sstat-sub '+(profit>=0?'up':'down');}
 
@@ -1173,12 +1237,170 @@ function renderOverview() {
         <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:'DM Mono',monospace">${n.date}</div>
       </div>
     </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📝</div>Нет заметок</div>';
+
+  // PnL chart
+  renderPnlChart();
+}
+
+// ── Render: PnL Chart ──
+function renderPnlChart() {
+  const canvas = document.getElementById('pnl-canvas');
+  const empty  = document.getElementById('pnl-empty');
+  const sumEl  = document.getElementById('pnl-summary');
+  if(!canvas) return;
+
+  const sorted = [...S.transactions].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!sorted.length) {
+    canvas.style.display='none'; if(empty) empty.style.display='block'; return;
+  }
+  canvas.style.display='block'; if(empty) empty.style.display='none';
+
+  // Build cumulative PnL data points by date
+  const dateMap = {};
+  sorted.forEach(t => {
+    const d = t.date;
+    if(!dateMap[d]) dateMap[d]=0;
+    dateMap[d] += t.type==='income' ? t.amount : -t.amount;
+  });
+
+  const dates = Object.keys(dateMap).sort();
+  const points = [];
+  let cum = 0;
+  dates.forEach(d => { cum += dateMap[d]; points.push({d, v:cum}); });
+
+  const totalPnl = cum;
+  const isPositive = totalPnl >= 0;
+  if(sumEl) {
+    sumEl.textContent = (isPositive?'↑ +':'↓ ') + RUB(Math.abs(totalPnl)) + ' с ' + dates[0];
+    sumEl.style.color = isPositive ? 'var(--green)' : 'var(--red)';
+  }
+
+  // Draw on canvas
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
+  const H = 180;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const PAD = {top:20, right:16, bottom:36, left:60};
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  const vals = points.map(p=>p.v);
+  const minV = Math.min(0, ...vals);
+  const maxV = Math.max(0, ...vals);
+  const range = maxV - minV || 1;
+
+  const xOf = i => PAD.left + (i/(points.length-1||1))*cW;
+  const yOf = v => PAD.top  + (1-(v-minV)/range)*cH;
+
+  // Zero line
+  const y0 = yOf(0);
+  ctx.beginPath(); ctx.moveTo(PAD.left, y0); ctx.lineTo(PAD.left+cW, y0);
+  ctx.strokeStyle='rgba(100,130,180,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Fill area
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), y0);
+  points.forEach((p,i)=>ctx.lineTo(xOf(i), yOf(p.v)));
+  ctx.lineTo(xOf(points.length-1), y0);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+  if(isPositive){grad.addColorStop(0,'rgba(46,158,107,0.18)');grad.addColorStop(1,'rgba(46,158,107,0.01)');}
+  else{grad.addColorStop(0,'rgba(208,85,85,0.01)');grad.addColorStop(1,'rgba(208,85,85,0.18)');}
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p,i)=>{ if(i===0)ctx.moveTo(xOf(i),yOf(p.v));else ctx.lineTo(xOf(i),yOf(p.v)); });
+  ctx.strokeStyle = isPositive ? '#2e9e6b' : '#d05555';
+  ctx.lineWidth = 2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+
+  // Y-axis labels
+  ctx.fillStyle='rgba(74,96,128,0.7)'; ctx.font=`10px "DM Mono",monospace`; ctx.textAlign='right';
+  [minV, (minV+maxV)/2, maxV].forEach(v=>{
+    const y=yOf(v);
+    ctx.fillText((v>=0?'+':'')+Math.round(v/1000)+'к', PAD.left-6, y+4);
+  });
+
+  // X-axis date labels (show first, middle, last)
+  ctx.textAlign='center'; ctx.fillStyle='rgba(74,96,128,0.6)'; ctx.font=`9px "DM Mono",monospace`;
+  const idxs=[0, Math.floor(points.length/2), points.length-1].filter((v,i,a)=>a.indexOf(v)===i);
+  idxs.forEach(i=>{ ctx.fillText(points[i].d.slice(5), xOf(i), H-PAD.bottom+14); });
+
+  // Dot at end
+  const last=points[points.length-1];
+  ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
+  ctx.fillStyle=isPositive?'#2e9e6b':'#d05555'; ctx.fill();
+  ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
 }
 
 // ── Render: Bookings ──
 let bookingTab='upcoming';
 window.switchTab=function(t){bookingTab=t;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');renderBookings();};
 const EDIT_SVG = `<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+// ── Overview period state ──
+let revPeriod = 'month';
+let profitPeriod = 'month';
+
+window.setRevPeriod = function(p, btn) {
+  revPeriod = p;
+  btn.closest('.sstat-period-toggle').querySelectorAll('.speriod-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOverview();
+};
+window.setProfitPeriod = function(p, btn) {
+  profitPeriod = p;
+  btn.closest('.sstat-period-toggle').querySelectorAll('.speriod-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOverview();
+};
+
+// ── Motivation quotes ──
+const QUOTES = [
+  {text:'Каждый день — это новый шанс сделать что-то замечательное.', author:'Неизвестный автор'},
+  {text:'Успех — это сумма маленьких усилий, повторяемых день за днём.', author:'Роберт Кольер'},
+  {text:'Начни там, где ты есть. Используй то, что у тебя есть. Делай то, что можешь.', author:'Артур Эш'},
+  {text:'Сегодняшний день — идеальный момент, чтобы сделать то, о чём мечтаешь.', author:'Неизвестный автор'},
+  {text:'Верь в себя и всё возможно. Знай, что в тебе есть всё необходимое для успеха.', author:'Неизвестный автор'},
+  {text:'Жизнь — это то, что с тобой происходит, пока ты занят другими планами.', author:'Джон Леннон'},
+  {text:'Единственный способ делать великую работу — любить то, что делаешь.', author:'Стив Джобс'},
+  {text:'Маленькие шаги каждый день приводят к большим результатам.', author:'Неизвестный автор'},
+  {text:'Сосредоточься на хорошем, и хорошего станет больше.', author:'Неизвестный автор'},
+  {text:'Твой бизнес растёт вместе с тобой. Продолжай развиваться.', author:'Неизвестный автор'},
+  {text:'Каждое утро — это возможность переписать свою историю заново.', author:'Неизвестный автор'},
+  {text:'Чем больше ты вкладываешь, тем больше получаешь. Это работает всегда.', author:'Неизвестный автор'},
+  {text:'Дисциплина — мост между целями и достижениями.', author:'Джим Рон'},
+  {text:'Думай масштабно. Начинай малым. Двигайся быстро.', author:'Неизвестный автор'},
+  {text:'Каждый день ты становишься немного лучше, чем вчера.', author:'Неизвестный автор'},
+];
+let lastQuoteIdx = -1;
+function getRandomQuote() {
+  let idx;
+  do { idx = Math.floor(Math.random() * QUOTES.length); } while(idx === lastQuoteIdx && QUOTES.length > 1);
+  lastQuoteIdx = idx;
+  return QUOTES[idx];
+}
+window.refreshQuote = function() {
+  const q = getRandomQuote();
+  const qt = document.getElementById('quote-text');
+  const qa = document.getElementById('quote-author');
+  if(qt) { qt.style.opacity='0'; setTimeout(()=>{qt.textContent='"'+q.text+'"';qt.style.opacity='1';},200); }
+  if(qa) { qa.style.opacity='0'; setTimeout(()=>{qa.textContent='— '+q.author;qa.style.opacity='1';},200); }
+};
+// init quote
+(function initQuote(){
+  const q=getRandomQuote();
+  const qt=document.getElementById('quote-text'), qa=document.getElementById('quote-author');
+  if(qt) { qt.textContent='"'+q.text+'"'; qt.style.transition='opacity 0.3s'; }
+  if(qa) { qa.textContent='— '+q.author; qa.style.transition='opacity 0.3s'; }
+})();
 function renderBookings(){
   const today=fmt(new Date());
   const isPast = bookingTab==='past';
@@ -1192,7 +1414,7 @@ function renderBookings(){
     const cancelBtn = !isPast && b.status!=='cancelled'
       ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="cancelBooking('${b.id}')">Отменить</button>` : '';
     const txBtn = isPast && b.status!=='cancelled'
-      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">Подтвердить доход</button>` : '';
+      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">₽ Доход</button>` : '';
     return`<li class="booking-item">
       <div class="avatar">${b.name[0]}</div>
       <div>
