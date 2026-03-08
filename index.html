@@ -1261,12 +1261,8 @@ function startApp(){
   onValue(ref(db, ROOT), snapshot => {
     const raw = snapshot.val();
 
-    if (!raw || (!raw.bookings && !raw.notes && !raw.transactions)) {
-      // First load — start blank, just set defaults
-      dbSet('platforms',    S.platforms);
-      dbSet('txCategories', S.txCategories);
-    } else {
-      // Load from Firebase
+    if (raw) {
+      // Always hydrate from Firebase
       S.bookings     = toArr(raw.bookings);
       S.notes        = toArr(raw.notes);
       S.transactions = toArr(raw.transactions);
@@ -1275,7 +1271,15 @@ function startApp(){
       if (raw.coverImage) {
         const img=document.getElementById('cover-img');
         img.src=raw.coverImage; img.style.display='block';
+      } else {
+        // Cover was deleted or never set — hide it
+        const img=document.getElementById('cover-img');
+        img.style.display='none'; img.src='';
       }
+    } else {
+      // Completely empty database — write defaults
+      dbSet('platforms',    S.platforms);
+      dbSet('txCategories', S.txCategories);
     }
 
     lsSave();
