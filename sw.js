@@ -1,9 +1,8 @@
-const CACHE = 'sofi-v1';
+const CACHE = 'sofi-v2';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap'
+  '/sofi-apartments/',
+  '/sofi-apartments/index.html',
+  '/sofi-apartments/manifest.json'
 ];
 
 // Install — cache core assets
@@ -26,8 +25,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = e.request.url;
 
-  // Let Firebase requests go straight to network (real-time data)
-  if (url.includes('firebasedatabase.app') || url.includes('firebaseio.com') || url.includes('googleapis.com/identitytoolkit')) {
+  // Let Firebase requests go straight to network
+  if (url.includes('firebasedatabase.app') || url.includes('firebaseio.com') || url.includes('googleapis.com')) {
     return;
   }
 
@@ -35,16 +34,14 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(response => {
-        // Cache successful GET responses
         if (e.request.method === 'GET' && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE).then(cache => cache.put(e.request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline fallback
         if (e.request.destination === 'document') {
-          return caches.match('/index.html');
+          return caches.match('/sofi-apartments/index.html');
         }
       });
     })
