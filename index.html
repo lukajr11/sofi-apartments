@@ -70,14 +70,23 @@
     background: var(--surface);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
-    position: sticky; top: 0; height: 100vh; min-height: 100vh;
+    position: sticky; top: 0; height: 100vh;
     box-shadow: 2px 0 16px rgba(61,114,196,0.05);
   }
+  /* Pseudo-element extends the visual background behind the sticky sidebar */
+  .sidebar::after {
+    content: ''; position: fixed; top: 0; left: 0;
+    width: 236px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    z-index: -1;
+  }
+  .sidebar.collapsed::after { width: 64px; }
   .sidebar-inner {
     display: flex; flex-direction: column;
     flex: 1; overflow: hidden;
     padding: 32px 0;
-    height: 100%;
+    min-height: 0;
   }
   .sidebar-logo { padding: 0 24px 28px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
   .logo-label { font-family: 'Cormorant Garamond', serif; font-size: 23px; font-weight: 400; letter-spacing: 0.04em; color: var(--accent); line-height: 1; }
@@ -439,6 +448,9 @@
   .row-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
   .empty-state { padding: 38px; text-align: center; color: var(--text3); font-size: 13px; }
   .empty-icon { font-size: 30px; margin-bottom: 10px; opacity: 0.35; }
+  @media (max-width: 960px) { #dash-bottom-row { grid-template-columns: 1fr !important; } }
+  @media (max-width: 600px)  { #dash-bottom-row { grid-template-columns: 1fr !important; } }
+
   .sstat-period-toggle { display:flex; gap:2px; }
   .speriod-btn { padding:2px 6px; border-radius:5px; border:1px solid var(--border2); background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:8.5px; cursor:pointer; transition:all 0.15s; line-height:1.4; }
   .speriod-btn:hover { background:var(--surface2); color:var(--text2); }
@@ -748,18 +760,33 @@
         </div>
       </div>
 
-      <!-- Total PnL Graph -->
-      <div class="card full-col" style="margin-top:18px;">
-        <div class="card-header">
-          <span class="card-title">Совокупный P&amp;L</span>
-          <span id="pnl-summary" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);"></span>
-        </div>
-        <div style="padding:16px 20px 20px;">
-          <canvas id="pnl-canvas" style="width:100%;height:180px;display:block;"></canvas>
-          <div id="pnl-empty" style="display:none;text-align:center;padding:40px 0;color:var(--text3);font-size:13px;">
-            <div style="font-size:28px;margin-bottom:8px;opacity:0.35;">📈</div>Нет транзакций для построения графика
+      <!-- Bottom row: Platform pie + PnL -->
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:18px;margin-top:18px;" id="dash-bottom-row">
+
+        <!-- Platform breakdown pie -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">По платформам</span></div>
+          <div style="padding:16px 18px 18px;">
+            <canvas id="platform-canvas" width="110" height="110" style="display:block;margin:0 auto 14px;"></canvas>
+            <div id="platform-legend" style="display:flex;flex-direction:column;gap:6px;"></div>
           </div>
         </div>
+
+        <!-- Total PnL Graph -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Совокупный P&amp;L</span>
+            <span id="pnl-summary" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);"></span>
+          </div>
+          <div style="padding:16px 20px 20px;position:relative;">
+            <canvas id="pnl-canvas" style="width:100%;height:180px;display:block;cursor:crosshair;"></canvas>
+            <div id="pnl-tooltip" style="position:absolute;pointer-events:none;display:none;background:var(--text);color:#fff;border-radius:8px;padding:6px 11px;font-size:11.5px;font-family:'DM Mono',monospace;white-space:nowrap;z-index:10;transform:translate(-50%,-100%);margin-top:-8px;"></div>
+            <div id="pnl-empty" style="display:none;text-align:center;padding:40px 0;color:var(--text3);font-size:13px;">
+              <div style="font-size:28px;margin-bottom:8px;opacity:0.35;">📈</div>Нет транзакций для построения графика
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1256,11 +1283,14 @@ function renderOverview() {
       </div>
     </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📝</div>Нет заметок</div>';
 
-  // PnL chart
+  // PnL chart + platform pie
   renderPnlChart();
+  renderPlatformPie();
 }
 
-// ── Render: PnL Chart ──
+// ── Render: PnL Chart with crosshair hover ──
+let _pnlPoints = [], _pnlMeta = {};
+
 function renderPnlChart() {
   const canvas = document.getElementById('pnl-canvas');
   const empty  = document.getElementById('pnl-empty');
@@ -1273,18 +1303,16 @@ function renderPnlChart() {
   }
   canvas.style.display='block'; if(empty) empty.style.display='none';
 
-  // Build cumulative PnL data points by date
+  // Build cumulative PnL
   const dateMap = {};
   sorted.forEach(t => {
-    const d = t.date;
-    if(!dateMap[d]) dateMap[d]=0;
-    dateMap[d] += t.type==='income' ? t.amount : -t.amount;
+    if(!dateMap[t.date]) dateMap[t.date]=0;
+    dateMap[t.date] += t.type==='income' ? t.amount : -t.amount;
   });
-
   const dates = Object.keys(dateMap).sort();
-  const points = [];
-  let cum = 0;
+  const points = []; let cum = 0;
   dates.forEach(d => { cum += dateMap[d]; points.push({d, v:cum}); });
+  _pnlPoints = points;
 
   const totalPnl = cum;
   const isPositive = totalPnl >= 0;
@@ -1293,69 +1321,188 @@ function renderPnlChart() {
     sumEl.style.color = isPositive ? 'var(--green)' : 'var(--red)';
   }
 
-  // Draw on canvas
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
-  const H = 180;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
+  const drawChart = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 500;
+    const H = 180;
+    canvas.width  = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const PAD = {top:20, right:16, bottom:36, left:62};
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top  - PAD.bottom;
+    const vals = points.map(p=>p.v);
+    const minV = Math.min(0,...vals), maxV = Math.max(0,...vals);
+    const range = maxV - minV || 1;
+    const xOf = i => PAD.left + (i/(points.length-1||1))*cW;
+    const yOf = v => PAD.top  + (1-(v-minV)/range)*cH;
+
+    _pnlMeta = {PAD,cW,cH,W,H,minV,maxV,range,xOf,yOf,isPositive,points};
+
+    // Zero line
+    const y0=yOf(0);
+    ctx.beginPath(); ctx.moveTo(PAD.left,y0); ctx.lineTo(PAD.left+cW,y0);
+    ctx.strokeStyle='rgba(100,130,180,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+
+    // Fill
+    ctx.beginPath(); ctx.moveTo(xOf(0),y0);
+    points.forEach((p,i)=>ctx.lineTo(xOf(i),yOf(p.v)));
+    ctx.lineTo(xOf(points.length-1),y0); ctx.closePath();
+    const grad=ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
+    if(isPositive){grad.addColorStop(0,'rgba(46,158,107,0.18)');grad.addColorStop(1,'rgba(46,158,107,0.02)');}
+    else{grad.addColorStop(0,'rgba(208,85,85,0.02)');grad.addColorStop(1,'rgba(208,85,85,0.18)');}
+    ctx.fillStyle=grad; ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    points.forEach((p,i)=>{ if(i===0)ctx.moveTo(xOf(i),yOf(p.v));else ctx.lineTo(xOf(i),yOf(p.v)); });
+    ctx.strokeStyle=isPositive?'#2e9e6b':'#d05555';
+    ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+
+    // Y labels
+    ctx.fillStyle='rgba(74,96,128,0.7)'; ctx.font='10px "DM Mono",monospace'; ctx.textAlign='right';
+    [minV,(minV+maxV)/2,maxV].forEach(v=>{
+      const yv=yOf(v);
+      const lbl = Math.abs(v)>=1000?(v>=0?'+':'')+Math.round(v/1000)+'к':(v>=0?'+':'')+Math.round(v);
+      ctx.fillText(lbl, PAD.left-6, yv+4);
+    });
+
+    // X labels
+    ctx.textAlign='center'; ctx.fillStyle='rgba(74,96,128,0.6)'; ctx.font='9px "DM Mono",monospace';
+    [0,Math.floor(points.length/2),points.length-1].filter((v,i,a)=>a.indexOf(v)===i)
+      .forEach(i=>ctx.fillText(points[i].d.slice(5), xOf(i), H-PAD.bottom+14));
+
+    // End dot
+    const last=points[points.length-1];
+    ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
+    ctx.fillStyle=isPositive?'#2e9e6b':'#d05555'; ctx.fill();
+    ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  };
+
+  drawChart();
+
+  // Crosshair hover
+  const tooltip = document.getElementById('pnl-tooltip');
+  canvas._pnlDrawChart = drawChart;
+
+  canvas.onmousemove = function(e) {
+    if(!_pnlMeta.xOf||!_pnlPoints.length) return;
+    const {PAD,cW,xOf,yOf,isPositive,points,W,H} = _pnlMeta;
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width/rect.width) / (window.devicePixelRatio||1);
+    const my = (e.clientY - rect.top)  * (canvas.height/rect.height) / (window.devicePixelRatio||1);
+    if(mx < PAD.left || mx > PAD.left+cW) { if(tooltip) tooltip.style.display='none'; return; }
+
+    // Find nearest point
+    const frac = (mx - PAD.left) / cW;
+    let idx = Math.round(frac * (points.length-1));
+    idx = Math.max(0, Math.min(points.length-1, idx));
+    const pt = points[idx];
+    const px = xOf(idx), py = yOf(pt.v);
+
+    // Redraw chart then crosshair
+    drawChart();
+    const ctx2 = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio||1;
+    ctx2.save(); ctx2.scale(dpr,dpr);
+
+    ctx2.beginPath(); ctx2.moveTo(px, PAD.top); ctx2.lineTo(px, H-PAD.bottom);
+    ctx2.strokeStyle='rgba(100,130,180,0.35)'; ctx2.lineWidth=1; ctx2.setLineDash([3,3]); ctx2.stroke(); ctx2.setLineDash([]);
+
+    ctx2.beginPath(); ctx2.arc(px, py, 5, 0, Math.PI*2);
+    ctx2.fillStyle = isPositive?'#2e9e6b':'#d05555'; ctx2.fill();
+    ctx2.beginPath(); ctx2.arc(px, py, 5, 0, Math.PI*2);
+    ctx2.strokeStyle='#fff'; ctx2.lineWidth=2; ctx2.stroke();
+    ctx2.restore();
+
+    if(tooltip) {
+      const sign = pt.v >= 0 ? '+' : '';
+      tooltip.textContent = pt.d + '  ' + sign + RUB(Math.round(pt.v));
+      tooltip.style.display = 'block';
+      const canvasRect = canvas.getBoundingClientRect();
+      const scaleX = canvasRect.width / W;
+      tooltip.style.left = (px * scaleX + canvasRect.left - canvasRect.left) + 'px';
+      tooltip.style.top  = (py * scaleX - 14) + 'px';
+    }
+  };
+
+  canvas.onmouseleave = function() {
+    if(tooltip) tooltip.style.display='none';
+    drawChart();
+  };
+
+  // Redraw on resize
+  window.addEventListener('resize', drawChart, {once:true});
+}
+
+// ── Render: Platform Pie ──
+const PIE_COLORS = ['#3d72c4','#2e9e6b','#e6a817','#d05555','#7c55d4','#2596be','#e06b3a'];
+function renderPlatformPie() {
+  const canvas = document.getElementById('platform-canvas');
+  const legend = document.getElementById('platform-legend');
+  if(!canvas) return;
+
+  const counts = {};
+  S.bookings.filter(b=>b.status!=='cancelled').forEach(b=>{
+    const p = b.platform||'Прочее';
+    counts[p] = (counts[p]||0) + 1;
+  });
+
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const total = entries.reduce((s,[,v])=>s+v,0);
+
+  if(!total) {
+    canvas.style.display='none';
+    if(legend) legend.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;">Нет броней</div>';
+    return;
+  }
+  canvas.style.display='block';
+
+  const SIZE = 110, R = 44, cx = SIZE/2, cy = SIZE/2;
+  const dpr = window.devicePixelRatio||1;
+  canvas.width = SIZE*dpr; canvas.height = SIZE*dpr;
+  canvas.style.width = SIZE+'px'; canvas.style.height = SIZE+'px';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const PAD = {top:20, right:16, bottom:36, left:60};
-  const cW = W - PAD.left - PAD.right;
-  const cH = H - PAD.top  - PAD.bottom;
-
-  const vals = points.map(p=>p.v);
-  const minV = Math.min(0, ...vals);
-  const maxV = Math.max(0, ...vals);
-  const range = maxV - minV || 1;
-
-  const xOf = i => PAD.left + (i/(points.length-1||1))*cW;
-  const yOf = v => PAD.top  + (1-(v-minV)/range)*cH;
-
-  // Zero line
-  const y0 = yOf(0);
-  ctx.beginPath(); ctx.moveTo(PAD.left, y0); ctx.lineTo(PAD.left+cW, y0);
-  ctx.strokeStyle='rgba(100,130,180,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
-
-  // Fill area
-  ctx.beginPath();
-  ctx.moveTo(xOf(0), y0);
-  points.forEach((p,i)=>ctx.lineTo(xOf(i), yOf(p.v)));
-  ctx.lineTo(xOf(points.length-1), y0);
-  ctx.closePath();
-  const grad = ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
-  if(isPositive){grad.addColorStop(0,'rgba(46,158,107,0.18)');grad.addColorStop(1,'rgba(46,158,107,0.01)');}
-  else{grad.addColorStop(0,'rgba(208,85,85,0.01)');grad.addColorStop(1,'rgba(208,85,85,0.18)');}
-  ctx.fillStyle=grad; ctx.fill();
-
-  // Line
-  ctx.beginPath();
-  points.forEach((p,i)=>{ if(i===0)ctx.moveTo(xOf(i),yOf(p.v));else ctx.lineTo(xOf(i),yOf(p.v)); });
-  ctx.strokeStyle = isPositive ? '#2e9e6b' : '#d05555';
-  ctx.lineWidth = 2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
-
-  // Y-axis labels
-  ctx.fillStyle='rgba(74,96,128,0.7)'; ctx.font=`10px "DM Mono",monospace`; ctx.textAlign='right';
-  [minV, (minV+maxV)/2, maxV].forEach(v=>{
-    const y=yOf(v);
-    ctx.fillText((v>=0?'+':'')+Math.round(v/1000)+'к', PAD.left-6, y+4);
+  let startAngle = -Math.PI/2;
+  entries.forEach(([name,count],i) => {
+    const slice = (count/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx, cy, R, startAngle, startAngle+slice);
+    ctx.closePath();
+    ctx.fillStyle = PIE_COLORS[i % PIE_COLORS.length];
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, startAngle, startAngle+slice);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    startAngle += slice;
   });
 
-  // X-axis date labels (show first, middle, last)
-  ctx.textAlign='center'; ctx.fillStyle='rgba(74,96,128,0.6)'; ctx.font=`9px "DM Mono",monospace`;
-  const idxs=[0, Math.floor(points.length/2), points.length-1].filter((v,i,a)=>a.indexOf(v)===i);
-  idxs.forEach(i=>{ ctx.fillText(points[i].d.slice(5), xOf(i), H-PAD.bottom+14); });
+  // Center hole
+  ctx.beginPath(); ctx.arc(cx,cy,R*0.52,0,Math.PI*2);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--surface').trim()||'#fff';
+  ctx.fill();
 
-  // Dot at end
-  const last=points[points.length-1];
-  ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
-  ctx.fillStyle=isPositive?'#2e9e6b':'#d05555'; ctx.fill();
-  ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
-  ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  // Center label
+  ctx.fillStyle='#1e2d45'; ctx.font=`bold 15px "Outfit",sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(total, cx, cy-5);
+  ctx.fillStyle='rgba(74,96,128,0.7)'; ctx.font=`9px "DM Mono",monospace`;
+  ctx.fillText('броней', cx, cy+9);
+
+  // Legend
+  if(legend) {
+    legend.innerHTML = entries.map(([name,count],i)=>`
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${PIE_COLORS[i%PIE_COLORS.length]};flex-shrink:0;"></div>
+        <span style="font-size:11.5px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text3);">${count} (${Math.round(count/total*100)}%)</span>
+      </div>`).join('');
+  }
 }
 
 // ── Render: Bookings ──
@@ -1431,8 +1578,19 @@ function renderBookings(){
     const n=nights(b.checkin,b.checkout);
     const cancelBtn = !isPast && b.status!=='cancelled'
       ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="cancelBooking('${b.id}')">Отменить</button>` : '';
-    const txBtn = isPast && b.status!=='cancelled'
-      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">Подтвердить доход</button>` : '';
+
+    let txBtn = '';
+    if(isPast && b.status!=='cancelled'){
+      // Check if a matching income transaction already exists for this booking
+      const desc=`${b.name} · ${b.checkin} – ${b.checkout} · ${b.platform}`;
+      const alreadyLogged = S.transactions.some(t=>t.type==='income' && t.desc===desc);
+      if(alreadyLogged){
+        txBtn = `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--text3);border-color:var(--border2);cursor:default;opacity:0.7;" disabled title="Доход уже добавлен в транзакции">✓ Доход добавлен</button>`;
+      } else {
+        txBtn = `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">Подтвердить доход</button>`;
+      }
+    }
+
     return`<li class="booking-item">
       <div class="avatar">${b.name[0]}</div>
       <div>
@@ -1827,7 +1985,7 @@ window.saveTransaction=function(){
   dbSet('transactions/'+id,t); lsSave(); closeModal('transaction'); renderBudget(); renderOverview();
   toast(editId?'✦ Транзакция обновлена':'✦ Транзакция сохранена');
 };
-window.deleteTransaction=function(id){dbDelete('transactions/'+id);S.transactions=S.transactions.filter(t=>t.id!==id);lsSave();renderBudget();renderOverview();toast('Транзакция удалена');};
+window.deleteTransaction=function(id){dbDelete('transactions/'+id);S.transactions=S.transactions.filter(t=>t.id!==id);lsSave();renderBudget();renderOverview();renderBookings();toast('Транзакция удалена');};;
 window.addPlatform=function(){const inp=document.getElementById('new-platform-input'),name=inp.value.trim();if(!name)return toast('Введите название');if(S.platforms.includes(name))return toast('Уже есть');S.platforms.push(name);dbSet('platforms',S.platforms);lsSave();refreshPlatformSelect();document.getElementById('b-platform').value=name;inp.value='';toast('✦ Платформа добавлена');};
 window.addTxCategory=function(){const inp=document.getElementById('new-cat-input'),name=inp.value.trim();if(!name)return toast('Введите категорию');if(S.txCategories.includes(name))return toast('Уже есть');S.txCategories.push(name);dbSet('txCategories',S.txCategories);lsSave();refreshCatSelect();document.getElementById('t-cat').value=name;inp.value='';toast('✦ Категория добавлена');};
 window.deleteTxCategory=function(name){if(S.txCategories.length<=1)return toast('Нужна хотя бы одна');S.txCategories=S.txCategories.filter(c=>c!==name);dbSet('txCategories',S.txCategories);lsSave();refreshCatSelect();toast('Категория удалена');};
