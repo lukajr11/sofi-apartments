@@ -167,12 +167,12 @@
     overflow:hidden; margin-bottom:20px;
   }
   .sstat {
-    padding:16px 20px; border-right:1px solid var(--border);
-    transition:background 0.15s; position:relative;
+    padding:14px 16px; border-right:1px solid var(--border);
+    transition:background 0.15s; position:relative; min-width:0;
   }
   .sstat:last-child { border-right:none; }
   .sstat:hover { background:var(--surface2); }
-  .sstat-label { font-family:'DM Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.13em; color:var(--text3); margin-bottom:7px; }
+  .sstat-label { font-family:'DM Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text3); margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sstat-value { font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:400; color:var(--text); line-height:1; }
   .sstat-value em { font-size:13px; color:var(--text3); font-style:normal; margin-right:1px; }
   .sstat-sub { font-size:10.5px; margin-top:4px; color:var(--text3); }
@@ -451,7 +451,25 @@
   @media (max-width: 960px) { #dash-bottom-row { grid-template-columns: 1fr !important; } }
   @media (max-width: 600px)  { #dash-bottom-row { grid-template-columns: 1fr !important; } }
 
-  .sstat-period-toggle { display:flex; gap:2px; }
+  /* Period toggle — compact on small cells */
+  .sstat-period-toggle { display:flex; gap:2px; flex-shrink:0; }
+  .speriod-btn { padding:2px 5px; border-radius:5px; border:1px solid var(--border2); background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:8px; cursor:pointer; transition:all 0.15s; line-height:1.5; white-space:nowrap; }
+  .speriod-btn:hover { background:var(--surface2); color:var(--text2); }
+  .speriod-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  /* Quote banner mobile */
+  @media (max-width:600px) {
+    #quote-banner { padding:11px 13px; margin-bottom:12px; }
+    #quote-text { font-size:14px; }
+    /* Stats strip — hide period toggle labels on very small screens, keep buttons */
+    .sstat-label { font-size:8px; }
+    .speriod-btn { font-size:7.5px; padding:1px 4px; }
+    /* Platform pie — smaller on mobile */
+    #dash-bottom-row .card:first-child { order: 2; }
+    #dash-bottom-row .card:last-child  { order: 1; }
+    /* PnL canvas height reduce on mobile */
+    #pnl-canvas { height:140px !important; }
+  }
   .speriod-btn { padding:2px 6px; border-radius:5px; border:1px solid var(--border2); background:transparent; color:var(--text3); font-family:'DM Mono',monospace; font-size:8.5px; cursor:pointer; transition:all 0.15s; line-height:1.4; }
   .speriod-btn:hover { background:var(--surface2); color:var(--text2); }
   .speriod-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
@@ -680,9 +698,9 @@
       <!-- Stats strip -->
       <div class="stats-strip">
         <div class="sstat">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div class="sstat-label" id="stat-rev-label">Доход · Месяц</div>
-            <div class="sstat-period-toggle">
+          <div style="display:flex;align-items:center;gap:4px;justify-content:space-between;margin-bottom:5px;min-width:0;">
+            <div class="sstat-label" id="stat-rev-label" style="flex:1;min-width:0;">Доход</div>
+            <div class="sstat-period-toggle" style="flex-shrink:0;">
               <button class="speriod-btn active" onclick="setRevPeriod('month',this)">1М</button>
               <button class="speriod-btn" onclick="setRevPeriod('3month',this)">3М</button>
               <button class="speriod-btn" onclick="setRevPeriod('6month',this)">6М</button>
@@ -692,7 +710,7 @@
           <div class="sstat-sub up" id="stat-rev-change">— нет данных</div>
         </div>
         <div class="sstat">
-          <div class="sstat-label">Активных броней</div>
+          <div class="sstat-label" style="margin-bottom:5px;">Активных броней</div>
           <div class="sstat-value" id="stat-bookings">0</div>
           <div class="sstat-sub" id="stat-book-change">сейчас заселены</div>
         </div>
@@ -702,9 +720,9 @@
           <div class="sstat-sub" id="stat-avg-change">— нет данных</div>
         </div>
         <div class="sstat">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">
-            <div class="sstat-label" id="stat-profit-label">Чистая прибыль · Месяц</div>
-            <div class="sstat-period-toggle">
+          <div style="display:flex;align-items:center;gap:4px;justify-content:space-between;margin-bottom:5px;min-width:0;">
+            <div class="sstat-label" id="stat-profit-label" style="flex:1;min-width:0;">Прибыль</div>
+            <div class="sstat-period-toggle" style="flex-shrink:0;">
               <button class="speriod-btn active" onclick="setProfitPeriod('month',this)">1М</button>
               <button class="speriod-btn" onclick="setProfitPeriod('3month',this)">3М</button>
               <button class="speriod-btn" onclick="setProfitPeriod('6month',this)">6М</button>
@@ -1215,13 +1233,13 @@ function renderOverview() {
     return S.transactions.filter(t=>new Date(t.date)>=cutoff);
   }
 
-  const periodLabel = p => p==='month'?'Месяц':p==='3month'?'3 мес.':'6 мес.';
+  const periodLabel = p => p==='month'?' · 1М':p==='3month'?' · 3М':' · 6М';
 
   // Revenue stat
   const revTx = getTxForPeriod(revPeriod);
   const income = revTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const revLabelEl = document.getElementById('stat-rev-label');
-  if(revLabelEl) revLabelEl.textContent = 'Доход · '+periodLabel(revPeriod);
+  if(revLabelEl) revLabelEl.textContent = 'Доход' + periodLabel(revPeriod);
 
   // Profit stat
   const profTx = getTxForPeriod(profitPeriod);
@@ -1229,7 +1247,7 @@ function renderOverview() {
   const profExpense = profTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
   const profit = profIncome - profExpense;
   const profLabelEl = document.getElementById('stat-profit-label');
-  if(profLabelEl) profLabelEl.textContent = 'Прибыль · '+periodLabel(profitPeriod);
+  if(profLabelEl) profLabelEl.textContent = 'Прибыль' + periodLabel(profitPeriod);
 
   const today=fmt(now);
   const active=S.bookings.filter(b=>b.status!=='cancelled'&&b.checkin<=today&&b.checkout>today);
@@ -1289,153 +1307,227 @@ function renderOverview() {
 }
 
 // ── Render: PnL Chart with crosshair hover ──
-let _pnlPoints = [], _pnlMeta = {};
-
 function renderPnlChart() {
-  const canvas = document.getElementById('pnl-canvas');
-  const empty  = document.getElementById('pnl-empty');
-  const sumEl  = document.getElementById('pnl-summary');
+  const canvas  = document.getElementById('pnl-canvas');
+  const empty   = document.getElementById('pnl-empty');
+  const sumEl   = document.getElementById('pnl-summary');
+  const tooltip = document.getElementById('pnl-tooltip');
   if(!canvas) return;
 
   const sorted = [...S.transactions].sort((a,b)=>a.date.localeCompare(b.date));
   if(!sorted.length) {
-    canvas.style.display='none'; if(empty) empty.style.display='block'; return;
+    canvas.style.display='none';
+    if(empty) empty.style.display='block';
+    if(tooltip) tooltip.style.display='none';
+    return;
   }
-  canvas.style.display='block'; if(empty) empty.style.display='none';
+  canvas.style.display='block';
+  if(empty) empty.style.display='none';
 
-  // Build cumulative PnL
+  // Build cumulative PnL by date
   const dateMap = {};
   sorted.forEach(t => {
-    if(!dateMap[t.date]) dateMap[t.date]=0;
+    if(!dateMap[t.date]) dateMap[t.date] = 0;
     dateMap[t.date] += t.type==='income' ? t.amount : -t.amount;
   });
   const dates = Object.keys(dateMap).sort();
   const points = []; let cum = 0;
   dates.forEach(d => { cum += dateMap[d]; points.push({d, v:cum}); });
-  _pnlPoints = points;
 
   const totalPnl = cum;
   const isPositive = totalPnl >= 0;
+  const lineColor = isPositive ? '#2e9e6b' : '#d05555';
   if(sumEl) {
     sumEl.textContent = (isPositive?'↑ +':'↓ ') + RUB(Math.abs(totalPnl)) + ' с ' + dates[0];
-    sumEl.style.color = isPositive ? 'var(--green)' : 'var(--red)';
+    sumEl.style.color = lineColor;
   }
 
-  const drawChart = () => {
+  const PAD = {top:20, right:16, bottom:36, left:62};
+
+  // Static draw — called once, never on mousemove
+  function drawStatic() {
     const dpr = window.devicePixelRatio || 1;
-    const W = canvas.offsetWidth || canvas.parentElement.offsetWidth || 500;
+    const W = canvas.parentElement.clientWidth - 40; // account for padding
     const H = 180;
-    canvas.width  = W * dpr; canvas.height = H * dpr;
-    canvas.style.width = W+'px'; canvas.style.height = H+'px';
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.dataset.w = W;
+    canvas.dataset.h = H;
+
     const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(dpr, dpr);
 
-    const PAD = {top:20, right:16, bottom:36, left:62};
     const cW = W - PAD.left - PAD.right;
     const cH = H - PAD.top  - PAD.bottom;
     const vals = points.map(p=>p.v);
-    const minV = Math.min(0,...vals), maxV = Math.max(0,...vals);
+    const minV = Math.min(0, ...vals), maxV = Math.max(0, ...vals);
     const range = maxV - minV || 1;
-    const xOf = i => PAD.left + (i/(points.length-1||1))*cW;
-    const yOf = v => PAD.top  + (1-(v-minV)/range)*cH;
+    const xOf = i => PAD.left + (i / Math.max(points.length-1,1)) * cW;
+    const yOf = v => PAD.top  + (1 - (v-minV)/range) * cH;
 
-    _pnlMeta = {PAD,cW,cH,W,H,minV,maxV,range,xOf,yOf,isPositive,points};
+    // Store for hover
+    canvas.dataset.minV = minV;
+    canvas.dataset.maxV = maxV;
+    canvas.dataset.cW = cW;
+    canvas.dataset.cH = cH;
+
+    const y0 = yOf(0);
 
     // Zero line
-    const y0=yOf(0);
-    ctx.beginPath(); ctx.moveTo(PAD.left,y0); ctx.lineTo(PAD.left+cW,y0);
-    ctx.strokeStyle='rgba(100,130,180,0.15)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(PAD.left, y0); ctx.lineTo(PAD.left+cW, y0);
+    ctx.strokeStyle='rgba(100,130,180,0.15)'; ctx.lineWidth=1;
+    ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
 
     // Fill
-    ctx.beginPath(); ctx.moveTo(xOf(0),y0);
-    points.forEach((p,i)=>ctx.lineTo(xOf(i),yOf(p.v)));
-    ctx.lineTo(xOf(points.length-1),y0); ctx.closePath();
-    const grad=ctx.createLinearGradient(0,PAD.top,0,PAD.top+cH);
-    if(isPositive){grad.addColorStop(0,'rgba(46,158,107,0.18)');grad.addColorStop(1,'rgba(46,158,107,0.02)');}
-    else{grad.addColorStop(0,'rgba(208,85,85,0.02)');grad.addColorStop(1,'rgba(208,85,85,0.18)');}
-    ctx.fillStyle=grad; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(xOf(0), y0);
+    points.forEach((p,i) => ctx.lineTo(xOf(i), yOf(p.v)));
+    ctx.lineTo(xOf(points.length-1), y0);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+cH);
+    if(isPositive){ grad.addColorStop(0,'rgba(46,158,107,0.20)'); grad.addColorStop(1,'rgba(46,158,107,0.01)'); }
+    else          { grad.addColorStop(0,'rgba(208,85,85,0.01)');  grad.addColorStop(1,'rgba(208,85,85,0.20)'); }
+    ctx.fillStyle = grad; ctx.fill();
 
     // Line
     ctx.beginPath();
-    points.forEach((p,i)=>{ if(i===0)ctx.moveTo(xOf(i),yOf(p.v));else ctx.lineTo(xOf(i),yOf(p.v)); });
-    ctx.strokeStyle=isPositive?'#2e9e6b':'#d05555';
-    ctx.lineWidth=2; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+    points.forEach((p,i) => { if(i===0) ctx.moveTo(xOf(i),yOf(p.v)); else ctx.lineTo(xOf(i),yOf(p.v)); });
+    ctx.strokeStyle = lineColor; ctx.lineWidth=2;
+    ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
 
     // Y labels
     ctx.fillStyle='rgba(74,96,128,0.7)'; ctx.font='10px "DM Mono",monospace'; ctx.textAlign='right';
-    [minV,(minV+maxV)/2,maxV].forEach(v=>{
-      const yv=yOf(v);
-      const lbl = Math.abs(v)>=1000?(v>=0?'+':'')+Math.round(v/1000)+'к':(v>=0?'+':'')+Math.round(v);
+    [minV, (minV+maxV)/2, maxV].forEach(v => {
+      const yv = yOf(v);
+      const abs = Math.abs(v);
+      const lbl = abs >= 1000 ? (v>=0?'+':'-')+Math.round(abs/1000)+'к' : (v>=0?'+':'')+Math.round(v);
       ctx.fillText(lbl, PAD.left-6, yv+4);
     });
 
     // X labels
     ctx.textAlign='center'; ctx.fillStyle='rgba(74,96,128,0.6)'; ctx.font='9px "DM Mono",monospace';
-    [0,Math.floor(points.length/2),points.length-1].filter((v,i,a)=>a.indexOf(v)===i)
-      .forEach(i=>ctx.fillText(points[i].d.slice(5), xOf(i), H-PAD.bottom+14));
+    [0, Math.floor(points.length/2), points.length-1]
+      .filter((v,i,a) => a.indexOf(v)===i)
+      .forEach(i => ctx.fillText(points[i].d.slice(5), xOf(i), H-PAD.bottom+14));
 
     // End dot
-    const last=points[points.length-1];
-    ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
-    ctx.fillStyle=isPositive?'#2e9e6b':'#d05555'; ctx.fill();
-    ctx.beginPath(); ctx.arc(xOf(points.length-1),yOf(last.v),4,0,Math.PI*2);
+    const last = points[points.length-1];
+    ctx.beginPath(); ctx.arc(xOf(points.length-1), yOf(last.v), 4, 0, Math.PI*2);
+    ctx.fillStyle=lineColor; ctx.fill();
+    ctx.beginPath(); ctx.arc(xOf(points.length-1), yOf(last.v), 4, 0, Math.PI*2);
     ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-  };
+  }
 
-  drawChart();
+  drawStatic();
 
-  // Crosshair hover
-  const tooltip = document.getElementById('pnl-tooltip');
-  canvas._pnlDrawChart = drawChart;
+  // Overlay canvas for crosshair — drawn separately, no flicker
+  let overlayCanvas = document.getElementById('pnl-overlay');
+  if(!overlayCanvas) {
+    overlayCanvas = document.createElement('canvas');
+    overlayCanvas.id = 'pnl-overlay';
+    overlayCanvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+    canvas.parentElement.style.position = 'relative';
+    canvas.parentElement.appendChild(overlayCanvas);
+  }
 
+  function syncOverlay() {
+    overlayCanvas.width  = canvas.width;
+    overlayCanvas.height = canvas.height;
+    overlayCanvas.style.width  = canvas.style.width;
+    overlayCanvas.style.height = canvas.style.height;
+    overlayCanvas.style.top    = canvas.offsetTop  + 'px';
+    overlayCanvas.style.left   = canvas.offsetLeft + 'px';
+  }
+  syncOverlay();
+
+  function clearOverlay() {
+    const ctx = overlayCanvas.getContext('2d');
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  }
+
+  // Mouse events on the main canvas
   canvas.onmousemove = function(e) {
-    if(!_pnlMeta.xOf||!_pnlPoints.length) return;
-    const {PAD,cW,xOf,yOf,isPositive,points,W,H} = _pnlMeta;
-    const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) * (canvas.width/rect.width) / (window.devicePixelRatio||1);
-    const my = (e.clientY - rect.top)  * (canvas.height/rect.height) / (window.devicePixelRatio||1);
-    if(mx < PAD.left || mx > PAD.left+cW) { if(tooltip) tooltip.style.display='none'; return; }
+    if(!points.length) return;
+    const W = +canvas.dataset.w || canvas.offsetWidth;
+    const H = +canvas.dataset.h || 180;
+    const cW = +canvas.dataset.cW || (W - PAD.left - PAD.right);
+    const cH = +canvas.dataset.cH || (H - PAD.top - PAD.bottom);
+    const minV = +canvas.dataset.minV, maxV = +canvas.dataset.maxV;
+    const range = maxV - minV || 1;
+    const xOf = i => PAD.left + (i / Math.max(points.length-1,1)) * cW;
+    const yOf = v => PAD.top  + (1 - (v-minV)/range) * cH;
 
-    // Find nearest point
+    const rect = canvas.getBoundingClientRect();
+    const dpr  = window.devicePixelRatio || 1;
+    // Mouse position in CSS pixels relative to canvas
+    const mx = e.clientX - rect.left;
+
+    if(mx < PAD.left || mx > PAD.left + cW) {
+      clearOverlay();
+      if(tooltip) tooltip.style.display='none';
+      return;
+    }
+
     const frac = (mx - PAD.left) / cW;
     let idx = Math.round(frac * (points.length-1));
     idx = Math.max(0, Math.min(points.length-1, idx));
-    const pt = points[idx];
-    const px = xOf(idx), py = yOf(pt.v);
+    const pt  = points[idx];
+    const px  = xOf(idx);   // CSS pixels
+    const py  = yOf(pt.v);  // CSS pixels
 
-    // Redraw chart then crosshair
-    drawChart();
-    const ctx2 = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio||1;
-    ctx2.save(); ctx2.scale(dpr,dpr);
+    // Draw overlay
+    syncOverlay();
+    const ctx = overlayCanvas.getContext('2d');
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
 
-    ctx2.beginPath(); ctx2.moveTo(px, PAD.top); ctx2.lineTo(px, H-PAD.bottom);
-    ctx2.strokeStyle='rgba(100,130,180,0.35)'; ctx2.lineWidth=1; ctx2.setLineDash([3,3]); ctx2.stroke(); ctx2.setLineDash([]);
+    // Vertical crosshair line
+    ctx.beginPath();
+    ctx.moveTo(px, PAD.top);
+    ctx.lineTo(px, H - PAD.bottom);
+    ctx.strokeStyle = 'rgba(100,130,180,0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
-    ctx2.beginPath(); ctx2.arc(px, py, 5, 0, Math.PI*2);
-    ctx2.fillStyle = isPositive?'#2e9e6b':'#d05555'; ctx2.fill();
-    ctx2.beginPath(); ctx2.arc(px, py, 5, 0, Math.PI*2);
-    ctx2.strokeStyle='#fff'; ctx2.lineWidth=2; ctx2.stroke();
-    ctx2.restore();
+    // Dot on line
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2);
+    ctx.fillStyle = lineColor; ctx.fill();
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
 
+    ctx.restore();
+
+    // Tooltip — positioned relative to the canvas parent div (which is position:relative)
     if(tooltip) {
       const sign = pt.v >= 0 ? '+' : '';
-      tooltip.textContent = pt.d + '  ' + sign + RUB(Math.round(pt.v));
+      tooltip.textContent = pt.d + '   ' + sign + RUB(Math.round(pt.v));
       tooltip.style.display = 'block';
-      const canvasRect = canvas.getBoundingClientRect();
-      const scaleX = canvasRect.width / W;
-      tooltip.style.left = (px * scaleX + canvasRect.left - canvasRect.left) + 'px';
-      tooltip.style.top  = (py * scaleX - 14) + 'px';
+      // px/py are CSS pixels within the canvas; canvas has offsetTop padding
+      const canvasOffsetTop  = canvas.offsetTop;
+      const canvasOffsetLeft = canvas.offsetLeft;
+      let tx = canvasOffsetLeft + px;
+      let ty = canvasOffsetTop  + py - 36;
+      // Keep tooltip within bounds
+      tooltip.style.left = tx + 'px';
+      tooltip.style.top  = ty + 'px';
+      tooltip.style.transform = 'translateX(-50%)';
     }
   };
 
   canvas.onmouseleave = function() {
+    clearOverlay();
     if(tooltip) tooltip.style.display='none';
-    drawChart();
   };
 
-  // Redraw on resize
-  window.addEventListener('resize', drawChart, {once:true});
+  // Resize: redraw static, clear overlay
+  const ro = new ResizeObserver(() => { drawStatic(); syncOverlay(); clearOverlay(); if(tooltip) tooltip.style.display='none'; });
+  ro.observe(canvas.parentElement);
+  canvas._ro = ro; // keep reference
 }
 
 // ── Render: Platform Pie ──
