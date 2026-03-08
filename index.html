@@ -780,13 +780,13 @@ const PASSWORDS = ['sofi2026', 'sister2026'];
 const LS_KEY    = 'sofi_v4';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAIcbbAE-gco_AV7-lJ_tw_pJmOvaWXhmE",
-  authDomain: "sofi-apartments-1a344.firebaseapp.com",
-  databaseURL: "https://sofi-apartments-1a344-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "sofi-apartments-1a344",
-  storageBucket: "sofi-apartments-1a344.firebasestorage.app",
+  apiKey:            "AIzaSyAIcbbAE-gco_AV7-lJ_tw_pJmOvaWXhmE",
+  authDomain:        "sofi-apartments-1a344.firebaseapp.com",
+  databaseURL:       "https://sofi-apartments-1a344-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "sofi-apartments-1a344",
+  storageBucket:     "sofi-apartments-1a344.firebasestorage.app",
   messagingSenderId: "691484619812",
-  appId: "1:691484619812:web:03b2bd01ef0cd1931b94b1"
+  appId:             "1:691484619812:web:03b2bd01ef0cd1931b94b1"
 };
 
 const fbApp = initializeApp(firebaseConfig);
@@ -1020,31 +1020,6 @@ window.setCoverImage=function(e){
 };
 
 // ── Seed demo ──
-function seedDemo(){
-  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
-  S.bookings=[
-    {id:uid(),name:'Анна Соколова',checkin:fmt(new Date(y,m,3)),checkout:fmt(new Date(y,m,8)),rate:4200,status:'confirmed',platform:'Авито',notes:'Поздний заезд после 22:00.'},
-    {id:uid(),name:'Дмитрий Волков',checkin:fmt(new Date(y,m,10)),checkout:fmt(new Date(y,m,15)),rate:3800,status:'confirmed',platform:'ЦИАН',notes:''},
-    {id:uid(),name:'Мария Белова',checkin:fmt(new Date(y,m,17)),checkout:fmt(new Date(y,m,22)),rate:4500,status:'confirmed',platform:'Прямой контакт',notes:'Аллергия на животных.'},
-    {id:uid(),name:'Алексей Козлов',checkin:fmt(new Date(y,m,24)),checkout:fmt(new Date(y,m,29)),rate:3900,status:'pending',platform:'Яндекс.Аренда',notes:''},
-  ];
-  S.notes=[
-    {id:uid(),tag:'maintenance',text:'Кран на кухне капает — сантехник записан.',date:fmt(new Date(y,m,5))},
-    {id:uid(),tag:'idea',text:'Добавить корзину с местными угощениями.',date:fmt(new Date(y,m,7))},
-    {id:uid(),tag:'urgent',text:'Продлить разрешение на аренду до апреля!',date:fmt(new Date(y,m,8))},
-    {id:uid(),tag:'general',text:'Пароль Wi-Fi: StudioBlue2026',date:fmt(new Date(y,m,1))},
-  ];
-  S.transactions=[
-    {id:uid(),type:'income',amount:21000,date:fmt(new Date(y,m,8)),desc:'Анна Соколова — Авито',cat:'Доход от аренды'},
-    {id:uid(),type:'income',amount:19000,date:fmt(new Date(y,m,15)),desc:'Дмитрий Волков',cat:'Доход от аренды'},
-    {id:uid(),type:'income',amount:22500,date:fmt(new Date(y,m,22)),desc:'Мария Белова',cat:'Доход от аренды'},
-    {id:uid(),type:'expense',amount:2800,date:fmt(new Date(y,m,8)),desc:'Профессиональная уборка',cat:'Уборка'},
-    {id:uid(),type:'expense',amount:1400,date:fmt(new Date(y,m,10)),desc:'Электроэнергия',cat:'Коммунальные услуги'},
-    {id:uid(),type:'expense',amount:900,date:fmt(new Date(y,m,5)),desc:'Туалетные принадлежности',cat:'Расходники'},
-    {id:uid(),type:'expense',amount:3800,date:fmt(new Date(y,m,16)),desc:'Сантехник — ремонт крана',cat:'Обслуживание'},
-    {id:uid(),type:'expense',amount:2100,date:fmt(new Date(y,m,22)),desc:'Комиссия платформы',cat:'Комиссия платформы'},
-  ];
-}
 
 // ── Login ──
 window.doLogin=function(){
@@ -1076,12 +1051,8 @@ function startApp(){
   onValue(ref(db, ROOT), snapshot => {
     const raw = snapshot.val();
 
-    if (!raw) {
-      // First ever load — seed and push to Firebase
-      seedDemo();
-      dbSet('bookings',     toObj(S.bookings));
-      dbSet('notes',        toObj(S.notes));
-      dbSet('transactions', toObj(S.transactions));
+    if (!raw || (!raw.bookings && !raw.notes && !raw.transactions)) {
+      // First load — start blank, just set defaults
       dbSet('platforms',    S.platforms);
       dbSet('txCategories', S.txCategories);
     } else {
