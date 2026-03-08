@@ -259,6 +259,33 @@
   .note-btn:hover { color: var(--red); border-color: rgba(208,85,85,0.3); background: var(--red-dim); }
 
   /* ── Budget ── */
+  .budget-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:12px; flex-wrap:wrap; }
+  .budget-nav-arrows { display:flex; align-items:center; gap:8px; }
+  .budget-nav-title { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:400; color:var(--text); min-width:160px; text-align:center; }
+  .nav-arrow { width:34px; height:34px; border-radius:9px; border:1px solid var(--border2); background:var(--surface); color:var(--text2); cursor:pointer; font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+  .nav-arrow:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .budget-view-toggle { display:flex; gap:4px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:3px; }
+  .bv-btn { padding:6px 16px; border-radius:7px; border:none; background:transparent; color:var(--text3); font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; transition:all 0.15s; }
+  .bv-btn.active { background:var(--surface); color:var(--accent); font-weight:500; box-shadow:0 1px 4px rgba(61,114,196,0.10); }
+
+  /* Totals strip */
+  .budget-totals { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-bottom:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 1px 4px rgba(61,114,196,0.05); }
+  .btotal { padding:16px 20px; border-right:1px solid var(--border); position:relative; transition:background 0.15s; }
+  .btotal:last-child { border-right:none; }
+  .btotal:hover { background:var(--surface2); }
+  .btotal-label { font-family:'DM Mono',monospace; font-size:9px; text-transform:uppercase; letter-spacing:0.12em; color:var(--text3); margin-bottom:7px; }
+  .btotal-value { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:400; color:var(--text); line-height:1; }
+  .btotal-sub { font-size:10.5px; color:var(--text3); margin-top:4px; }
+  .btotal-income .btotal-value { color:var(--green); }
+  .btotal-expense .btotal-value { color:var(--red); }
+  .btotal-profit .btotal-value { color:var(--accent); }
+  .btotal::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; opacity:0; transition:opacity 0.2s; }
+  .btotal-income::after { background:var(--green); }
+  .btotal-expense::after { background:var(--red); }
+  .btotal-profit::after { background:var(--accent); }
+  .btotal-margin::after { background:linear-gradient(90deg,var(--accent),#7ab3f7); }
+  .btotal:hover::after { opacity:1; }
+
   .budget-section { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
   .income-bar { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; margin: 7px 0; }
   .income-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
@@ -271,6 +298,15 @@
   .transaction-amount { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-weight: 400; }
   .amount-in { color: var(--green); }
   .amount-out { color: var(--red); }
+
+  /* Monthly bars (year view) */
+  .month-row { display:grid; grid-template-columns:64px 1fr 1fr 90px; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
+  .month-row:last-child { border-bottom:none; }
+  .month-name { color:var(--text2); font-family:'DM Mono',monospace; font-size:10.5px; }
+  .month-bar-wrap { height:6px; background:var(--surface3); border-radius:3px; overflow:hidden; }
+  .month-bar-income { height:100%; background:var(--green); border-radius:3px; transition:width 0.8s ease; }
+  .month-bar-expense { height:100%; background:var(--red); border-radius:3px; transition:width 0.8s ease; }
+  .month-profit { font-family:'Cormorant Garamond',serif; font-size:15px; text-align:right; }
 
   /* ── Profit ring ── */
   .profit-ring-wrap { display: flex; align-items: center; gap: 24px; padding: 20px 22px; }
@@ -445,6 +481,12 @@
     .dash-bottom { grid-template-columns:1fr; gap:14px; }
     .bookings-grid { grid-template-columns:1fr; gap:12px; }
     .budget-section { grid-template-columns:1fr; gap:12px; }
+    .budget-totals { grid-template-columns:repeat(2,1fr); }
+    .budget-totals .btotal:nth-child(2) { border-right:none; }
+    .budget-totals .btotal:nth-child(3) { border-top:1px solid var(--border); }
+    .budget-totals .btotal:nth-child(4) { border-top:1px solid var(--border); border-right:none; }
+    .budget-nav { gap:8px; }
+    .budget-nav-title { font-size:18px; min-width:120px; }
     .form-row { grid-template-columns:1fr; gap:0; }
     .stats-grid { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
   }
@@ -480,6 +522,11 @@
     .cal-day { font-size:11px; border-radius:5px; }
     .modal-title { font-size:22px; margin-bottom:14px; }
     .profit-ring-wrap { flex-direction:column; align-items:center; padding:16px; gap:16px; }
+    .budget-totals { grid-template-columns:repeat(2,1fr); }
+    .btotal { padding:12px 14px; }
+    .btotal-value { font-size:18px; }
+    .month-row { grid-template-columns:50px 1fr 1fr 70px; gap:6px; font-size:11.5px; }
+    .budget-nav-title { font-size:16px; min-width:100px; }
     .tab-btn { padding:6px 12px; font-size:12px; }
     .mobile-nav-item { font-size:9px; padding:4px; }
     .mobile-nav-item svg { width:20px; height:20px; }
@@ -700,13 +747,52 @@
       <div class="page-header">
         <div>
           <div class="page-title">Бюджет</div>
-          <div class="page-date">Финансовый обзор</div>
+          <div class="page-date" id="budget-period-label">Финансовый обзор</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('transaction')">+ Добавить транзакцию</button>
+        <button class="btn btn-primary" onclick="openModal('transaction')">+ Транзакция</button>
       </div>
+
+      <!-- Period navigator -->
+      <div class="budget-nav">
+        <div class="budget-nav-arrows">
+          <button class="nav-arrow" onclick="budgetPrev()">&#8249;</button>
+          <div class="budget-nav-title" id="budget-nav-title">Март 2026</div>
+          <button class="nav-arrow" onclick="budgetNext()">&#8250;</button>
+        </div>
+        <div class="budget-view-toggle">
+          <button class="bv-btn active" id="bv-month" onclick="setBudgetView('month')">Месяц</button>
+          <button class="bv-btn" id="bv-year" onclick="setBudgetView('year')">Год</button>
+        </div>
+      </div>
+
+      <!-- Totals strip -->
+      <div class="budget-totals">
+        <div class="btotal btotal-income">
+          <div class="btotal-label">Общий доход</div>
+          <div class="btotal-value" id="btotal-income">₽0</div>
+          <div class="btotal-sub" id="btotal-income-sub"></div>
+        </div>
+        <div class="btotal btotal-expense">
+          <div class="btotal-label">Общие расходы</div>
+          <div class="btotal-value" id="btotal-expense">₽0</div>
+          <div class="btotal-sub" id="btotal-expense-sub"></div>
+        </div>
+        <div class="btotal btotal-profit">
+          <div class="btotal-label">Чистая прибыль</div>
+          <div class="btotal-value" id="btotal-profit">₽0</div>
+          <div class="btotal-sub" id="btotal-profit-sub"></div>
+        </div>
+        <div class="btotal btotal-margin">
+          <div class="btotal-label">Маржа</div>
+          <div class="btotal-value" id="btotal-margin">0%</div>
+          <div class="btotal-sub" id="btotal-margin-sub"></div>
+        </div>
+      </div>
+
+      <!-- Chart + categories -->
       <div class="budget-section">
         <div class="card">
-          <div class="card-header"><span class="card-title">Сводка за месяц</span></div>
+          <div class="card-header"><span class="card-title" id="budget-ring-label">Сводка</span></div>
           <div class="profit-ring-wrap">
             <div class="profit-ring">
               <svg width="100" height="100" viewBox="0 0 100 100">
@@ -728,8 +814,19 @@
           <div id="budget-categories" style="padding:16px 20px;"></div>
         </div>
       </div>
+
+      <!-- Monthly breakdown (year view only) -->
+      <div class="card full-col" id="budget-monthly-card" style="display:none;margin-bottom:18px;">
+        <div class="card-header"><span class="card-title">По месяцам</span></div>
+        <div id="budget-monthly" style="padding:0 20px;"></div>
+      </div>
+
+      <!-- Transactions -->
       <div class="card full-col">
-        <div class="card-header"><span class="card-title">Транзакции</span></div>
+        <div class="card-header">
+          <span class="card-title">Транзакции</span>
+          <span id="tx-count-label" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;"></span>
+        </div>
         <div id="transaction-list" style="min-height:100px;"></div>
       </div>
     </div>
@@ -1097,35 +1194,133 @@ function renderCalendar(){
   if(t)t.textContent=now.toLocaleString('ru-RU',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase());
 }
 
+// ── Budget state ──
+let budgetView = 'month'; // 'month' | 'year'
+let budgetYear = new Date().getFullYear();
+let budgetMonth = new Date().getMonth(); // 0-indexed
+
+const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_RU_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+window.setBudgetView = function(v) {
+  budgetView = v;
+  document.getElementById('bv-month').classList.toggle('active', v==='month');
+  document.getElementById('bv-year').classList.toggle('active', v==='year');
+  renderBudget();
+};
+window.budgetPrev = function() {
+  if(budgetView==='month') { budgetMonth--; if(budgetMonth<0){budgetMonth=11;budgetYear--;} }
+  else { budgetYear--; }
+  renderBudget();
+};
+window.budgetNext = function() {
+  if(budgetView==='month') { budgetMonth++; if(budgetMonth>11){budgetMonth=0;budgetYear++;} }
+  else { budgetYear++; }
+  renderBudget();
+};
+
 // ── Render: Budget ──
 function renderBudget(){
-  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
-  const mTx=S.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===y&&d.getMonth()===m;});
-  const income=mTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const expense=mTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  const profit=income-expense, margin=income>0?Math.round(profit/income*100):0;
-  // Ring chart — update existing SVG circles
-  const pct=income>0?Math.min(100,Math.round(expense/income*100)):0;
-  const circ=2*Math.PI*40; // r=40
-  const ringExp=document.getElementById('ring-expense');
-  const ringInc=document.getElementById('ring-income');
-  if(ringExp) ringExp.style.strokeDashoffset=circ*(1-pct/100);
-  if(ringInc) ringInc.style.strokeDashoffset=circ*(1-(income>0?Math.min(100,margin<0?0:margin):0)/100);
-  const pctEl=document.getElementById('ring-pct'); if(pctEl) pctEl.textContent=margin+'%';
-  // Legends
-  const sv=id=>document.getElementById(id)||{textContent:''};
-  sv('leg-income').textContent=RUB(income);
-  sv('leg-expense').textContent=RUB(expense);
-  sv('leg-profit').textContent=RUB(profit);
-  // Categories
-  const cats={};mTx.filter(t=>t.type==='expense').forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+t.amount;});
-  const catEl=document.getElementById('budget-categories');
-  if(catEl) catEl.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--text2)">${k}</span><span style="font-family:'DM Mono',monospace;font-size:12.5px;color:var(--text)">${RUB(v)}</span></div>`).join('')||'<div style="color:var(--text3);font-size:13px;padding:10px 0">Нет расходов за месяц</div>';
+  const isYear = budgetView === 'year';
+
+  // Title
+  const navTitle = isYear ? String(budgetYear) : `${MONTHS_RU[budgetMonth]} ${budgetYear}`;
+  const periodLabel = isYear ? `Годовой обзор · ${budgetYear}` : `Обзор за ${MONTHS_RU_GEN[budgetMonth]} ${budgetYear}`;
+  const el = id => document.getElementById(id);
+  if(el('budget-nav-title')) el('budget-nav-title').textContent = navTitle;
+  if(el('budget-period-label')) el('budget-period-label').textContent = periodLabel;
+  if(el('budget-ring-label')) el('budget-ring-label').textContent = isYear ? `Сводка за ${budgetYear}` : `Сводка за ${MONTHS_RU_GEN[budgetMonth]}`;
+
+  // Filter transactions
+  const filtered = S.transactions.filter(t => {
+    const d = new Date(t.date);
+    return isYear ? d.getFullYear()===budgetYear : (d.getFullYear()===budgetYear && d.getMonth()===budgetMonth);
+  });
+  const income  = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expense = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const profit  = income - expense;
+  const margin  = income > 0 ? Math.round(profit/income*100) : 0;
+
+  // Totals strip
+  const txCount = filtered.length;
+  if(el('btotal-income'))     el('btotal-income').textContent = RUB(income);
+  if(el('btotal-expense'))    el('btotal-expense').textContent = RUB(expense);
+  if(el('btotal-profit'))     el('btotal-profit').textContent = RUB(profit);
+  if(el('btotal-margin'))     el('btotal-margin').textContent = margin + '%';
+  if(el('btotal-income-sub')) el('btotal-income-sub').textContent = txCount + ' операций';
+  if(el('btotal-expense-sub'))el('btotal-expense-sub').textContent = filtered.filter(t=>t.type==='expense').length + ' расходов';
+  if(el('btotal-profit-sub')) { el('btotal-profit-sub').textContent = profit>=0 ? '↑ Прибыль' : '↓ Убыток'; el('btotal-profit-sub').style.color = profit>=0 ? 'var(--green)' : 'var(--red)'; }
+  if(el('btotal-margin-sub')) { el('btotal-margin-sub').textContent = margin>=50?'Отлично':margin>=20?'Хорошо':margin>0?'Низкая':'Нет данных'; }
+
+  // Ring chart
+  const pct = income>0 ? Math.min(100,Math.round(expense/income*100)) : 0;
+  const circ = 2*Math.PI*40;
+  const ringExp = el('ring-expense'), ringInc = el('ring-income');
+  if(ringExp) ringExp.style.strokeDashoffset = circ*(1-pct/100);
+  if(ringInc) ringInc.style.strokeDashoffset = circ*(1-(income>0?Math.min(100,margin<0?0:margin):0)/100);
+  if(el('ring-pct')) el('ring-pct').textContent = margin + '%';
+  if(el('leg-income')) el('leg-income').textContent = RUB(income);
+  if(el('leg-expense')) el('leg-expense').textContent = RUB(expense);
+  if(el('leg-profit')) el('leg-profit').textContent = RUB(profit);
+
+  // Categories breakdown
+  const cats = {};
+  filtered.filter(t=>t.type==='expense').forEach(t=>{cats[t.cat]=(cats[t.cat]||0)+t.amount;});
+  const catEl = el('budget-categories');
+  if(catEl) {
+    const maxVal = Math.max(...Object.values(cats), 1);
+    catEl.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`
+      <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:13px;color:var(--text2)">${k}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text)">${RUB(v)}</span>
+        </div>
+        <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(v/maxVal*100)}%;background:var(--red);border-radius:2px;transition:width 0.8s ease"></div>
+        </div>
+      </div>`).join('') || '<div style="color:var(--text3);font-size:13px;padding:10px 0">Нет расходов</div>';
+  }
+
+  // Monthly breakdown (year view)
+  const monthlyCard = el('budget-monthly-card');
+  const monthlyEl = el('budget-monthly');
+  if(monthlyCard) monthlyCard.style.display = isYear ? 'block' : 'none';
+  if(isYear && monthlyEl) {
+    const maxIncome = Math.max(...Array.from({length:12},(_,mi)=>{
+      const mx=S.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===budgetYear&&d.getMonth()===mi&&t.type==='income';}).reduce((s,t)=>s+t.amount,0);return mx;}),1);
+    monthlyEl.innerHTML = Array.from({length:12},(_,mi)=>{
+      const mTx = S.transactions.filter(t=>{const d=new Date(t.date);return d.getFullYear()===budgetYear&&d.getMonth()===mi;});
+      const mIn  = mTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+      const mExp = mTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      const mPro = mIn - mExp;
+      const iPct = Math.round(mIn/maxIncome*100);
+      const ePct = mIn>0?Math.min(100,Math.round(mExp/mIn*100)):0;
+      return `<div class="month-row">
+        <div class="month-name">${MONTHS_RU[mi].slice(0,3)}</div>
+        <div><div class="month-bar-wrap"><div class="month-bar-income" style="width:${iPct}%"></div></div><div style="font-size:10px;color:var(--green);margin-top:2px">${mIn?RUB(mIn):''}</div></div>
+        <div><div class="month-bar-wrap"><div class="month-bar-expense" style="width:${ePct}%"></div></div><div style="font-size:10px;color:var(--red);margin-top:2px">${mExp?RUB(mExp):''}</div></div>
+        <div class="month-profit" style="color:${mPro>=0?'var(--green)':'var(--red)'}">${mIn||mExp?RUB(mPro):''}</div>
+      </div>`;
+    }).join('');
+  }
+
   // Transactions list
-  const txEl=document.getElementById('transaction-list');
+  if(el('tx-count-label')) el('tx-count-label').textContent = filtered.length + ' записей';
+  const txEl = el('transaction-list');
   if(txEl){
-    const sorted=[...S.transactions].sort((a,b)=>b.date.localeCompare(a.date));
-    txEl.innerHTML=sorted.length?`<div style="padding:0 20px">`+sorted.map(t=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:${t.type==='income'?'#edfaf4':'#fef0f0'};flex-shrink:0">${t.type==='income'?'↑':'↓'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc}</div><div style="font-size:10.5px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${t.cat} · ${t.date}</div></div><div style="font-family:'DM Mono',monospace;font-size:13.5px;font-weight:500;color:${t.type==='income'?'#2e9e6b':'#d05555'};white-space:nowrap;margin-right:6px">${t.type==='income'?'+':'-'}${RUB(t.amount)}</div><button class="row-delete-btn" onclick="deleteTransaction('${t.id}')">✕</button></div>`).join('')+`</div>`:'<div class="empty-state"><div class="empty-icon">💰</div>Нет транзакций</div>';
+    const sorted = [...filtered].sort((a,b)=>b.date.localeCompare(a.date));
+    txEl.innerHTML = sorted.length
+      ? `<div style="padding:0 20px">` + sorted.map(t=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)">
+          <div style="width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;background:${t.type==='income'?'var(--green-dim)':'var(--red-dim)'};flex-shrink:0">${t.type==='income'?'↑':'↓'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.desc}</div>
+            <div style="font-size:10.5px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">${t.cat} · ${t.date}</div>
+          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;color:${t.type==='income'?'var(--green)':'var(--red)'};white-space:nowrap;margin-right:6px">${t.type==='income'?'+':'-'}${RUB(t.amount)}</div>
+          <button class="row-delete-btn" onclick="deleteTransaction('${t.id}')">✕</button>
+        </div>`).join('') + `</div>`
+      : '<div class="empty-state"><div class="empty-icon">💰</div>Нет транзакций за этот период</div>';
   }
 }
 
@@ -1198,9 +1393,32 @@ window.saveBooking=function(){
 };
 window.deleteBooking=function(id){dbDelete('bookings/'+id);S.bookings=S.bookings.filter(b=>b.id!==id);lsSave();renderBookings();renderOverview();updateSidebar();toast('Бронирование удалено');};
 window.cancelBooking=function(id){const b=S.bookings.find(b=>b.id===id);if(!b)return;b.status='cancelled';dbSet('bookings/'+id,b);lsSave();renderBookings();renderOverview();updateSidebar();toast('Бронирование отменено');};
-window.saveNote=function(){const text=document.getElementById('n-text').value.trim();if(!text)return toast('Напишите текст');const id=uid(),n={id,tag:document.getElementById('n-tag').value,text,date:fmt(new Date())};dbSet('notes/'+id,n);closeModal('note');toast('✦ Заметка сохранена');};
+window.saveNote=function(){
+  const text=document.getElementById('n-text').value.trim();
+  if(!text) return toast('Напишите текст');
+  const id=uid(), n={id, tag:document.getElementById('n-tag').value, text, date:fmt(new Date())};
+  S.notes.push(n);
+  dbSet('notes/'+id, n);
+  lsSave(); closeModal('note'); renderNotes(); renderOverview();
+  toast('✦ Заметка сохранена');
+};
 window.deleteNote=function(id){dbDelete('notes/'+id);S.notes=S.notes.filter(n=>n.id!==id);lsSave();renderNotes();renderOverview();toast('Заметка удалена');};
-window.saveTransaction=function(){const amount=document.getElementById('t-amount').value;if(!amount)return toast('Введите сумму');const id=uid(),t={id,type:document.getElementById('t-type').value,amount:Number(amount),date:document.getElementById('t-date').value,desc:document.getElementById('t-desc').value||'Транзакция',cat:document.getElementById('t-cat').value};dbSet('transactions/'+id,t);closeModal('transaction');toast('✦ Транзакция сохранена');};
+window.saveTransaction=function(){
+  const amount=document.getElementById('t-amount').value;
+  if(!amount) return toast('Введите сумму');
+  const id=uid(), t={
+    id,
+    type: document.getElementById('t-type').value,
+    amount: Number(amount),
+    date: document.getElementById('t-date').value,
+    desc: document.getElementById('t-desc').value||'Транзакция',
+    cat: document.getElementById('t-cat').value
+  };
+  S.transactions.push(t);
+  dbSet('transactions/'+id, t);
+  lsSave(); closeModal('transaction'); renderBudget(); renderOverview();
+  toast('✦ Транзакция сохранена');
+};
 window.deleteTransaction=function(id){dbDelete('transactions/'+id);S.transactions=S.transactions.filter(t=>t.id!==id);lsSave();renderBudget();renderOverview();toast('Транзакция удалена');};
 window.addPlatform=function(){const inp=document.getElementById('new-platform-input'),name=inp.value.trim();if(!name)return toast('Введите название');if(S.platforms.includes(name))return toast('Уже есть');S.platforms.push(name);dbSet('platforms',S.platforms);lsSave();refreshPlatformSelect();document.getElementById('b-platform').value=name;inp.value='';toast('✦ Платформа добавлена');};
 window.addTxCategory=function(){const inp=document.getElementById('new-cat-input'),name=inp.value.trim();if(!name)return toast('Введите категорию');if(S.txCategories.includes(name))return toast('Уже есть');S.txCategories.push(name);dbSet('txCategories',S.txCategories);lsSave();refreshCatSelect();document.getElementById('t-cat').value=name;inp.value='';toast('✦ Категория добавлена');};
