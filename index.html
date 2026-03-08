@@ -219,7 +219,7 @@
   /* ── Booking list ── */
   .bookings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
   .booking-list { list-style: none; }
-  .booking-item { display: grid; grid-template-columns: 42px 1fr auto 34px; gap: 12px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .booking-item { display: grid; grid-template-columns: 42px 1fr auto 68px; gap: 12px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .booking-item:last-child { border-bottom: none; }
   .booking-item:hover { background: var(--surface2); }
   .guest-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
@@ -515,7 +515,7 @@
     .alerts-area { gap:6px; margin-bottom:14px; }
     .alert-banner { padding:10px 13px; font-size:12px; gap:10px; }
     .dash-bottom { grid-template-columns:1fr; gap:12px; }
-    .booking-item { grid-template-columns:36px 1fr auto 28px; gap:8px; padding:11px 13px; }
+    .booking-item { grid-template-columns:36px 1fr auto 68px; gap:8px; padding:11px 13px; }
     .guest-name { font-size:12.5px !important; }
     .booking-dates { font-size:10px !important; }
     .booking-amount { font-size:15px !important; }
@@ -1192,7 +1192,7 @@ function renderBookings(){
     const cancelBtn = !isPast && b.status!=='cancelled'
       ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="cancelBooking('${b.id}')">Отменить</button>` : '';
     const txBtn = isPast && b.status!=='cancelled'
-      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">₽ Доход</button>` : '';
+      ? `<button class="btn btn-ghost" style="padding:5px 10px;font-size:11px;color:var(--green);border-color:rgba(46,158,107,0.3);" onclick="createTxFromBooking('${b.id}')">Подтвердить доход</button>` : '';
     return`<li class="booking-item">
       <div class="avatar">${b.name[0]}</div>
       <div>
