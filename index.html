@@ -1296,7 +1296,12 @@ function startApp(){
   });
 }
 
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Unregister any old service workers that were breaking the iOS share URL
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
 </script>
 </body>
 </html>
